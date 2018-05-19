@@ -1,0 +1,146 @@
+<div class="animated fadeIn"> 
+    <div class="card">
+      <div class="card-body">
+        <div id="mynetwork" style="height:700px;margin-top:40px;"></div>
+      </div>
+      <div class="card-footer">
+          <div class="row align-items-center">
+              <div class="col-2">                
+                <button type="button" class="btn btn-block btn-secondary" (click)="generateGraph()">Génerer</button>
+                <button type="button" class="btn btn-block btn-secondary"  (click)="clear()" >Éffacer</button>
+              </div>
+              <div class="col-4">
+                  <div class="form-group row">
+                      <label class="col-md-6 col-form-label" for="distance">Distance</label>
+                      <div class="col-md-6">
+                        <input class="form-control" id="distance" disabled="" name="distance"   [(ngModel)]="distance"  type="text">                        
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-md-6 col-form-label" for="delta-maximal">Delta.Max</label>
+                        <div class="col-md-6">
+                          <input class="form-control"  disabled="" id="delta-maximal" name="delta-maximal" [(ngModel)]="deltaMax" type="text">                        
+                        </div>
+                    </div>
+              </div>
+              <div class="col-4">
+                  <div class="form-group row">
+                      <label class="col-md-5 col-form-label" for="transformedLabel1">Étiq.transformée Agent 1</label>
+                      <div class="col-md-7">
+                        <input class="form-control" id="transformedLabel1" name="transformedLabel1" disabled=""  [(ngModel)]="transofrmedLabel1"  type="text">                        
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-md-5 col-form-label" for="transformedLabel2">Étiq.transformée Agent 2</label>
+                        <div class="col-md-7">
+                          <input class="form-control"  id="transformedLabel2" disabled="" name="transformedLabel2"  [(ngModel)]="transofrmedLabel2" type="text">                        
+                        </div>
+                    </div>
+              </div>
+              <div class="col-2">
+                  <button type="button" class="btn btn-block btn-primary" [disabled]="!canStart()" (click)="start()" >Départ</button>
+              </div>                            
+          </div>  
+      </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-lg-6">
+          <tabset>
+            <tab>
+              <ng-template tabHeading><i class="fa fa-street-view " style="color:red"> Agent 1</i></ng-template>
+              <form action="" method="post" enctype="multipart/form-data" class="form-horizontal">
+                <div class="form-group row">
+                  <label class="col-md-3 col-form-label" for="select1">Étiquette</label>
+                  <div class="col-md-9">
+                    <select id="agent1-label" [(ngModel)]="agent1Label" name="agent1-label" (change)="setFirstAgentLabel()" class="form-control">                      
+                      <option value="1" selected>1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>                                            
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label class="col-md-3 col-form-label" for="select1">Nb. ronde de décalage</label>
+                  <div class="col-md-9">
+                    <select id="agent1-shift" name="agent1-shift"   [(ngModel)]="agent1Shit" (change)="setAgent1Shift()" class="form-control">                      
+                      <option value="0" selected>0</option>
+                      <option value="1" >1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label class="col-md-3 col-form-label" for="select1">Position</label>
+                  <div class="col-md-9">
+                    <button class="btn btn-primary" [disabled]="!canSetPosition()" (click)="setFirstAgentPosition()">Placer sur le noeud selectionné</button>
+                  </div>
+                </div>
+              </form>
+            </tab>
+            <tab>
+              <ng-template tabHeading>Console</ng-template>
+              <textarea id="agent1-console" name="agent1-console" rows="9" class="form-control" placeholder="Console Agent 1..."></textarea>
+            </tab>
+          </tabset>
+        </div><!--/.col-->
+        <div class="col-sm-12 col-lg-6">
+          <tabset>
+            <tab>
+              <ng-template tabHeading><i class="fa fa-street-view " style="color:blue"> Agent 2</i></ng-template>
+              <form action="" method="post" enctype="multipart/form-data" class="form-horizontal">
+                <div class="form-group row">
+                  <label class="col-md-3 col-form-label" for="agent2-label">Étiquette</label>
+                  <div class="col-md-9">
+                    <select id="agent2-label" [(ngModel)]="agent2Label" (change)="setSecondAgentLabel()" name="agent2-label" class="form-control">                      
+                      <option value="1" >1</option>
+                      <option value="2" selected>2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>                                            
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label" for="select1">Nb. ronde de décalage</label>
+                    <div class="col-md-9">
+                      <select id="agent2-shift" name="agent2-shift"  [(ngModel)]="agent2Shit" (change)="setAgent2Shift()" class="form-control">                      
+                        <option value="0" selected>0</option>
+                        <option value="1" >1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                    </div>
+                  </div>                
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label" for="select1">Position</label>
+                    <div class="col-md-9">
+                      <button class="btn btn-primary" [disabled]="!canSetPosition()" (click)="setSecondAgentPosition()">Placer sur le noeud selectionné</button>
+                    </div>
+                  </div>
+              </form>              
+            </tab>
+            <tab>
+              <ng-template tabHeading>Console</ng-template>
+              <textarea id="agent2-console" name="agent2-console" rows="9" class="form-control" placeholder="Console Agent 2..."></textarea>
+            </tab>
+          </tabset>
+        </div><!--/.col-->
+      </div><!--/.row-->    
+  </div>

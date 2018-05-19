@@ -28,6 +28,7 @@
     "@coreui/angular": "^2.0.0-beta.4",
     "@coreui/coreui-plugin-chartjs-custom-tooltips": "^1.2.0",
     "@coreui/icons": "^0.1.1",
+    "angular-ts-math": "^1.0.7",
     "chart.js": "2.7.2",
     "core-js": "2.5.5",
     "flag-icon-css": "3.0.0",
@@ -41,6 +42,7 @@
     "rxjs-compat": "6.1.0",
     "simple-line-icons": "^2.4.1",
     "ts-helpers": "1.1.2",
+    "vis": "^4.21.0",
     "zone.js": "0.8.26"
   },
   "devDependencies": {

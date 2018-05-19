@@ -79,6 +79,10 @@ export const routes: Routes = [
         loadChildren: './views/theme/theme.module#ThemeModule'
       },
       {
+        path: 'algo',
+        loadChildren: './views/algo/algo.module#AlgoModule'
+      },
+      {
         path: 'widgets',
         loadChildren: './views/widgets/widgets.module#WidgetsModule'
       }
