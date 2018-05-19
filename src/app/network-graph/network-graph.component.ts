@@ -129,8 +129,11 @@ export class NetworkGraphComponent implements OnInit {
     this._rendezVousManager.setFirstAgentLabel(this.agent1Label);
   }
   setFirstAgentPosition() {
-    const nodeId = this.network.getSelectedNodes()[0];
+    const nodeId = this.network.getSelectedNodes()[0];    
     const node: Node = this.nodes.get(nodeId);
+    if (node === null || node === undefined) {
+      return;
+    }
     node.shape = 'icon';
     node.icon = {
       face: 'FontAwesome',
@@ -153,8 +156,11 @@ export class NetworkGraphComponent implements OnInit {
     this.distance = this._rendezVousManager.distance;
   }
   setSecondAgentPosition() {
-    const nodeId = this.network.getSelectedNodes()[0];
+    const nodeId = this.network.getSelectedNodes()[0];    
     const node: Node = this.nodes.get(nodeId);
+    if (node === null || node === undefined) {
+      return;
+    }
     node.shape = 'icon';
     node.icon = {
       face: 'FontAwesome',
@@ -192,6 +198,7 @@ export class NetworkGraphComponent implements OnInit {
     this._rendezVousManager.stop();
   }
   generateGraph() {
+    this.clear();
     this._rendezVousManager.clear();
     this.rendererGraph(25);
     this.nodeIds = this.nodes.getIds();
