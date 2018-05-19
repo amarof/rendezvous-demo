@@ -18,9 +18,10 @@ export class NetworkGraphComponent implements OnInit {
   agent2Shit = 0;
   transofrmedLabel1 = '';
   transofrmedLabel2 = '';
+  startButtonLabel = 'Départ';
   private firstAgentPosition = '';
   private secondAgentPosition = '';
-
+  private counter = 3;
   constructor(private _rendezVousManager: RendezVousManager) { }
 
   ngOnInit() {
@@ -129,7 +130,7 @@ export class NetworkGraphComponent implements OnInit {
     this._rendezVousManager.setFirstAgentLabel(this.agent1Label);
   }
   setFirstAgentPosition() {
-    const nodeId = this.network.getSelectedNodes()[0];    
+    const nodeId = this.network.getSelectedNodes()[0];
     const node: Node = this.nodes.get(nodeId);
     if (node === null || node === undefined) {
       return;
@@ -156,7 +157,7 @@ export class NetworkGraphComponent implements OnInit {
     this.distance = this._rendezVousManager.distance;
   }
   setSecondAgentPosition() {
-    const nodeId = this.network.getSelectedNodes()[0];    
+    const nodeId = this.network.getSelectedNodes()[0];
     const node: Node = this.nodes.get(nodeId);
     if (node === null || node === undefined) {
       return;
@@ -192,7 +193,14 @@ export class NetworkGraphComponent implements OnInit {
     });
     this._rendezVousManager.run(() => {
       this.updateTransformedLabels();
+    }, () => {
+      this.updateCounter();
+    }, () => {
+      this.rendezvousDone();
     });
+  }
+  rendezvousDone(){
+    this.startButtonLabel = 'Rendezvous effectué';
   }
   stop() {
     this._rendezVousManager.stop();
@@ -203,6 +211,14 @@ export class NetworkGraphComponent implements OnInit {
     this.rendererGraph(25);
     this.nodeIds = this.nodes.getIds();
     this.deltaMax = this._rendezVousManager.getDeltaMax();
+  }
+  updateCounter() {
+    this.startButtonLabel = '' + this.counter;
+    this.counter--;
+    if (this.counter === 0) {
+      this.counter = 3;
+      this.startButtonLabel = 'Rendez-vous en cours...';
+    }
   }
   updateTransformedLabels() {
     if ( this.distance === 0 && this.deltaMax === 0) {
@@ -226,6 +242,7 @@ export class NetworkGraphComponent implements OnInit {
     this.setAgent2Shift();
     this.transofrmedLabel1 = '';
     this.transofrmedLabel2 = '';
+    this.startButtonLabel = 'Départ';
   }
   private rendererGraph (nodeCount: Number) {
     this.nodes.clear();

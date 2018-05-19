@@ -26,8 +26,16 @@ export class RendezVousManager {
   private agent2Worker;
   private agent1CurrentBit = 0;
   private agent2CurrentBit = 0;
+  private currentAgent1Bit = '';
+  private currentAgent2Bit = '';
+  private agent1transformedLabel: any;
+  private agent2transformedLabel: any;
+  private agent1bitCounter  = 0;
+  private agent2bitCounter  = 0;
   private timer;
   private updateTransformedLabels: () => void;
+  private updateCounter: () => void;
+  private rendezvousDone: () => any;
   constructor() {}
 
   register(nodes: DataSet, edges: DataSet, visNetwork: Network) {
@@ -141,8 +149,10 @@ export class RendezVousManager {
       this.edges.update(edgesToSelect);
     }
   }
-  run(updateTransformedLabels: () => any) {
+  run(updateTransformedLabels: () => any , updateCounter: () => any, rendezvousDone: () => any) {
     this.updateTransformedLabels = updateTransformedLabels;
+    this.updateCounter = updateCounter;
+    this.rendezvousDone = rendezvousDone;
     this.initWorker();
     this.start();
   }
@@ -272,62 +282,53 @@ export class RendezVousManager {
     return transfLabel;
   }
   start() {
-    let currentAgent1Bit = '';
-    let currentAgent2Bit = '';
-    const agent1transformedLabel = this.FirstAgent.getTransformedLabelWithShift();
-    const agent2transformedLabel = this.SecondAgent.getTransformedLabelWithShift();
-    let agent1bitCounter  = 0;
-    let agent2bitCounter  = 0;
+    let counter = 3;
+    this.agent1transformedLabel = this.FirstAgent.getTransformedLabelWithShift();
+    this.agent2transformedLabel = this.SecondAgent.getTransformedLabelWithShift();
+    this.agent1bitCounter  = 0;
+    this.agent2bitCounter  = 0;
     let syncBits = 0;
-    this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(agent1transformedLabel, agent1bitCounter);
-    this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(agent2transformedLabel, agent2bitCounter);
+    this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
+    this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(this.agent2transformedLabel, this.agent2bitCounter);
     this.updateTransformedLabels();
     this.timer = setTimeout(() => {
-      if (agent1bitCounter < agent1transformedLabel.length) {
-        currentAgent1Bit = agent1transformedLabel[agent1bitCounter];
+      if (this.agent1bitCounter < this.agent1transformedLabel.length) {
+        this.currentAgent1Bit = this.agent1transformedLabel[this.agent1bitCounter];
         this.agent1Worker.postMessage({action: 'exec'});
-        agent1bitCounter++;
+        this.agent1bitCounter++;
       }
-      if (agent2bitCounter < agent1transformedLabel.length) {
-        currentAgent2Bit = agent2transformedLabel[agent2bitCounter];
+      if (this.agent2bitCounter < this.agent1transformedLabel.length) {
+        this.currentAgent2Bit = this.agent2transformedLabel[this.agent2bitCounter];
         this.agent2Worker.postMessage({action: 'exec'});
-        agent2bitCounter++;
+        this.agent2bitCounter++;
       }
     }, 3000);
-
+    const counterTimer = setInterval(() => {
+      this.updateCounter();
+      counter--;
+      if ( counter === 0 ){
+        counter = 3;
+        clearInterval(counterTimer);
+      }
+    }, 1000);
     this.agent1Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
         const nodeId = event.data.moveToNode;
         this.moveAgent1ToNode(nodeId);
-        if (currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
+        if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
         this.initialAgent2Node.Id === nodeId) {
           console.log('OUTSIDE: agent1 find agent 2:  RDV DONE:');
           this.agent1Worker.terminate();
           this.agent2Worker.terminate();
           this.setRendezVous(nodeId);
+          this.rendezvousDone();
         }
       } else if (event.data.bit !== undefined) {
         syncBits += 1;
         if (syncBits === 2) {
-          console.log('agent 1 bit ' + currentAgent1Bit + '.' + this.agent1CurrentBit + ' execution done' + syncBits);
+          console.log('agent 1 bit ' + this.currentAgent1Bit + '.' + this.agent1CurrentBit + ' execution done' + syncBits);
           syncBits = 0;
-          currentAgent1Bit = agent1transformedLabel[agent1bitCounter];
-          currentAgent2Bit = agent2transformedLabel[agent2bitCounter];
-          this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(agent1transformedLabel, agent1bitCounter);
-          this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(agent2transformedLabel, agent2bitCounter);
-          this.updateTransformedLabels();
-          if ((agent1bitCounter + 1) < agent1transformedLabel.length) {
-            agent1bitCounter++;
-            this.agent1Worker.postMessage({action: 'exec'});
-          } else {
-            this.agent1Worker.postMessage({action: '*'});
-          }
-          if ((agent2bitCounter + 1) < agent2transformedLabel.length) {
-            agent2bitCounter++;
-            this.agent2Worker.postMessage({action: 'exec'});
-          } else {
-            this.agent2Worker.postMessage({action: '*'});
-          }
+          this.executeCurrentBit();
         }
         this.agent1CurrentBit = Number(event.data.bit);
       }
@@ -336,38 +337,44 @@ export class RendezVousManager {
       if (event.data.moveToNode !== undefined) {
         const nodeId = event.data.moveToNode;
         this.moveAgent2ToNode(nodeId);
-        if (currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
+        if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
           this.initialAgent1Node.Id === nodeId) {
           console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
           this.agent1Worker.terminate();
           this.agent2Worker.terminate();
           this.setRendezVous(nodeId);
+          this.rendezvousDone();
         }
       } else if (event.data.bit !== undefined) {
         syncBits += 1;
         if (syncBits === 2) {
-          console.log('agent 2 bit ' + currentAgent2Bit + '.' + this.agent2CurrentBit + ' execution done ' + syncBits);
+          console.log('agent 2 bit ' + this.currentAgent2Bit + '.' + this.agent2CurrentBit + ' execution done ' + syncBits);
           syncBits = 0;
-          currentAgent1Bit = agent1transformedLabel[agent1bitCounter];
-          currentAgent2Bit = agent2transformedLabel[agent2bitCounter];
-          this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(agent1transformedLabel, agent1bitCounter);
-          this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(agent2transformedLabel, agent2bitCounter);
-          this.updateTransformedLabels();
-          if ((agent1bitCounter + 1) < agent1transformedLabel.length) {
-            agent1bitCounter++;
-            this.agent1Worker.postMessage({action: 'exec'});
-          } else {
-            this.agent1Worker.postMessage({action: '*'});
-          }
-          if ((agent2bitCounter + 1) < agent2transformedLabel.length) {
-            agent2bitCounter++;
-            this.agent2Worker.postMessage({action: 'exec'});
-          } else {
-            this.agent2Worker.postMessage({action: '*'});
-          }
+          this.executeCurrentBit();
         }
         this.agent2CurrentBit = Number(event.data.bit);
       }
     };
   } // start
+
+  executeCurrentBit() {
+    this.currentAgent1Bit = this.agent1transformedLabel[this.agent1bitCounter];
+    this.currentAgent2Bit = this.agent2transformedLabel[this.agent2bitCounter];
+    this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
+    this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(this.agent2transformedLabel, this.agent2bitCounter);
+    this.updateTransformedLabels();
+    if ((this.agent1bitCounter + 1) < this.agent1transformedLabel.length) {
+      this.agent1bitCounter++;
+      this.agent1Worker.postMessage({action: 'exec'});
+    } else {
+      this.agent1Worker.postMessage({action: '*'});
+    }
+    if ((this.agent2bitCounter + 1) < this.agent2transformedLabel.length) {
+      this.agent2bitCounter++;
+      this.agent2Worker.postMessage({action: 'exec'});
+    } else {
+      this.agent2Worker.postMessage({action: '*'});
+    }
+  }
+
 }
