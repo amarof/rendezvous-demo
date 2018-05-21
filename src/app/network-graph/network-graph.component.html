@@ -40,10 +40,16 @@
               <div class="col-2">                  
                   <button type="button" class="btn btn-block btn-primary" [disabled]="!canStart()" (click)="start()" >{{startButtonLabel}}</button>
                   <div class="form-check form-check-inline mr-1">
-                      <input class="form-check-input" type="checkbox" id="inline-checkbox1" value="option1">
+                      <input class="form-check-input" type="checkbox" [(ngModel)]="stopAfterEachRound"  >
                       <label class="form-check-label" for="inline-checkbox1">S'arrêter après chaque ronde</label>
-                      <button class="btn"><i class="fa fa-step-forward"></i></button>
                   </div>
+                  <div class="form-check form-check-inline mr-1">
+                    <button class="btn btn-sm" [disabled]="!canStepForword()" (click)="executeCurrentBit()" ><i class="fa fa-step-forward"></i></button>
+                </div>
+                <div class="form-check form-check-inline mr-1">
+                  <input class="form-check-input"  type="checkbox" [(ngModel)]="allowRDVWithSameBit"  >
+                  <label class="form-check-label" for="inline-checkbox1">Permettre le RDV durant le bit 1</label>
+              </div>
               </div>                            
           </div>  
       </div>

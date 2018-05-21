@@ -19,6 +19,9 @@ export class NetworkGraphComponent implements OnInit {
   transofrmedLabel1 = '';
   transofrmedLabel2 = '';
   startButtonLabel = 'Départ';
+  stopAfterEachRound = false;
+  allowRDVWithSameBit = false;
+  isRunning = false;
   private firstAgentPosition = '';
   private secondAgentPosition = '';
   private counter = 3;
@@ -103,6 +106,9 @@ export class NetworkGraphComponent implements OnInit {
     this._rendezVousManager.SecondAgent.Shift = 0;
     this._rendezVousManager.FirstAgent.Shift = this.agent1Shit;
   }
+  canStepForword(): boolean {
+    return (this.isRunning && this.stopAfterEachRound);
+  }
   canSetPosition(): boolean {
     if (this.network.getSelectedNodes().length > 0) {
       return true;
@@ -181,7 +187,7 @@ export class NetworkGraphComponent implements OnInit {
     this.nodes.update(node);
     this._rendezVousManager.setSecondAgent(this.agent2Label);
     this._rendezVousManager.setSecondAgentPosition(nodeId);
-    this.distance = this._rendezVousManager.distance;    
+    this.distance = this._rendezVousManager.distance;
   }
   start() {
     // init edges color
@@ -191,6 +197,9 @@ export class NetworkGraphComponent implements OnInit {
       edge.color = {};
       this.edges.update(edge);
     });
+    this._rendezVousManager.stopAfterEachRound = this.stopAfterEachRound;
+    this._rendezVousManager.allowRDVWithSameBit = this.allowRDVWithSameBit;
+    this.isRunning = true;
     this._rendezVousManager.run(() => {
       this.updateTransformedLabels();
     }, () => {
@@ -199,11 +208,17 @@ export class NetworkGraphComponent implements OnInit {
       this.rendezvousDone();
     });
   }
+  executeCurrentBit() {
+    this._rendezVousManager.executeCurrentBit();
+  }
   rendezvousDone(){
     this.startButtonLabel = 'Rendezvous effectué';
+    this.stopAfterEachRound = false;
+    this.isRunning = false;
   }
   stop() {
     this._rendezVousManager.stop();
+    this.isRunning = false;
   }
   generateGraph() {
     this.clear();
@@ -243,6 +258,8 @@ export class NetworkGraphComponent implements OnInit {
     this.transofrmedLabel1 = '';
     this.transofrmedLabel2 = '';
     this.startButtonLabel = 'Départ';
+    this.stopAfterEachRound = false;
+    this.isRunning = false;
   }
   private rendererGraph (nodeCount: Number) {
     this.nodes.clear();

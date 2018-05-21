@@ -29,7 +29,7 @@ function init(params){
     this._distance = params.distance;
     this._maxNeighbours = params.maxNeighbours;
     this.graph = params.graph;
-    this.shift = params.shift;
+    this.shift = params.shift;    
     this.transformedLabel = this.getTransformedLabel(this.agent.Label);
     this.visitedNodeCount = 2 * this._distance * this._maxNeighbours *
      (Math.pow( this._maxNeighbours - 1, this._distance - 1));
@@ -170,6 +170,7 @@ function moveToNode(nodeId){
     }
     postMessage(params);
     wait(this.nodeVisitTime);
+    
 }
 function getNodeById(nodeId) {    
     var node = graph.Nodes.find(n => n.Id == nodeId);

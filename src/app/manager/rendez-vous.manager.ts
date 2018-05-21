@@ -13,6 +13,8 @@ export class RendezVousManager {
   public transofrmedLabel2 = '';
   public FirstAgent: Agent;
   public SecondAgent: Agent;
+  public stopAfterEachRound = false;
+  public allowRDVWithSameBit = false;
   private Network: Graph = new Graph();
   private agent1Label = '1';
   private agent2Label = '2';
@@ -32,6 +34,7 @@ export class RendezVousManager {
   private agent2transformedLabel: any;
   private agent1bitCounter  = 0;
   private agent2bitCounter  = 0;
+  private syncBits = 0;
   private timer;
   private updateTransformedLabels: () => void;
   private updateCounter: () => void;
@@ -287,7 +290,6 @@ export class RendezVousManager {
     this.agent2transformedLabel = this.SecondAgent.getTransformedLabelWithShift();
     this.agent1bitCounter  = 0;
     this.agent2bitCounter  = 0;
-    let syncBits = 0;
     this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
     this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(this.agent2transformedLabel, this.agent2bitCounter);
     this.updateTransformedLabels();
@@ -314,9 +316,19 @@ export class RendezVousManager {
     this.agent1Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
         const nodeId = event.data.moveToNode;
+        let isRDV = false;
         this.moveAgent1ToNode(nodeId);
-        if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
-        this.initialAgent2Node.Id === nodeId) {
+        if (this.allowRDVWithSameBit) {
+          if ( this.SecondAgent.CurrentNode.Id === nodeId) {
+            isRDV = true;
+          }
+        } else {
+          if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
+          this.initialAgent2Node.Id === nodeId) {
+            isRDV = true;
+          }
+        }
+        if (isRDV) {
           console.log('OUTSIDE: agent1 find agent 2:  RDV DONE:');
           this.agent1Worker.terminate();
           this.agent2Worker.terminate();
@@ -324,11 +336,12 @@ export class RendezVousManager {
           this.rendezvousDone();
         }
       } else if (event.data.bit !== undefined) {
-        syncBits += 1;
-        if (syncBits === 2) {
-          console.log('agent 1 bit ' + this.currentAgent1Bit + '.' + this.agent1CurrentBit + ' execution done' + syncBits);
-          syncBits = 0;
-          this.executeCurrentBit();
+        this.syncBits += 1;
+        if (this.syncBits === 2) {
+          console.log('agent 1 bit ' + this.currentAgent1Bit + '.' + this.agent1CurrentBit + ' execution done' + this.syncBits);
+          if (!this.stopAfterEachRound) {
+            this.executeCurrentBit();
+          }
         }
         this.agent1CurrentBit = Number(event.data.bit);
       }
@@ -336,9 +349,19 @@ export class RendezVousManager {
     this.agent2Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
         const nodeId = event.data.moveToNode;
+        let isRDV = false;
         this.moveAgent2ToNode(nodeId);
-        if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
+        if (this.allowRDVWithSameBit) {
+          if (this.FirstAgent.CurrentNode.Id === nodeId) {
+            isRDV = true;
+          }
+        } else {
+          if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
           this.initialAgent1Node.Id === nodeId) {
+            isRDV = true;
+          }
+        }
+        if (isRDV) {
           console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
           this.agent1Worker.terminate();
           this.agent2Worker.terminate();
@@ -346,11 +369,12 @@ export class RendezVousManager {
           this.rendezvousDone();
         }
       } else if (event.data.bit !== undefined) {
-        syncBits += 1;
-        if (syncBits === 2) {
-          console.log('agent 2 bit ' + this.currentAgent2Bit + '.' + this.agent2CurrentBit + ' execution done ' + syncBits);
-          syncBits = 0;
-          this.executeCurrentBit();
+        this.syncBits += 1;
+        if (this.syncBits === 2) {
+          console.log('agent 2 bit ' + this.currentAgent2Bit + '.' + this.agent2CurrentBit + ' execution done ' + this.syncBits);
+          if (!this.stopAfterEachRound) {
+            this.executeCurrentBit();
+          }
         }
         this.agent2CurrentBit = Number(event.data.bit);
       }
@@ -358,6 +382,7 @@ export class RendezVousManager {
   } // start
 
   executeCurrentBit() {
+    this.syncBits = 0;
     this.currentAgent1Bit = this.agent1transformedLabel[this.agent1bitCounter];
     this.currentAgent2Bit = this.agent2transformedLabel[this.agent2bitCounter];
     this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
