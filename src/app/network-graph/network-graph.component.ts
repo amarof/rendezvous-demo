@@ -158,9 +158,12 @@ export class NetworkGraphComponent implements OnInit {
     };
     if (this.firstAgentPosition !== '') {
       const oldPositionNode: Node = this.nodes.get(this.firstAgentPosition);
-      oldPositionNode.shape = 'ellipse';
-      oldPositionNode.image = '';
-      this.nodes.update(oldPositionNode);
+      if (oldPositionNode !== null && oldPositionNode !== undefined) {
+        oldPositionNode.shape = 'ellipse';
+        oldPositionNode.image = '';
+        this.nodes.update(oldPositionNode);
+      }
+
     }
     this.firstAgentPosition = nodeId;
     node.x = undefined;
@@ -185,9 +188,12 @@ export class NetworkGraphComponent implements OnInit {
     };
     if (this.secondAgentPosition !== '') {
       const oldPositionNode: Node = this.nodes.get(this.secondAgentPosition);
-      oldPositionNode.shape = 'ellipse';
-      oldPositionNode.image = '';
-      this.nodes.update(oldPositionNode);
+      if (oldPositionNode !== null && oldPositionNode !== undefined) {
+        oldPositionNode.shape = 'ellipse';
+        oldPositionNode.image = '';
+        this.nodes.update(oldPositionNode);
+      }
+
     }
     this.secondAgentPosition = nodeId;
     node.x = undefined;
@@ -267,6 +273,8 @@ export class NetworkGraphComponent implements OnInit {
     this.deltaMax = 0;
     this.agent1Shit = 0;
     this.agent2Shit = 0;
+    this.secondAgentPosition = '1';
+    this.firstAgentPosition = '1';
     this.setAgent1Shift();
     this.setAgent2Shift();
     this.transofrmedLabel1 = '';
