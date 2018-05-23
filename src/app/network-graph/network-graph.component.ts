@@ -12,6 +12,8 @@ export class NetworkGraphComponent implements OnInit {
   nodeIds = [];
   agent1Label =  '1';
   agent2Label = '2';
+  agent1Console = '';
+  agent2Console = '';
   distance = 0;
   deltaMax = 0;
   agent1Shit = 0;
@@ -123,6 +125,12 @@ export class NetworkGraphComponent implements OnInit {
       return false;
     }
   }
+  getAgent1Console() {
+    this.agent1Console =  this._rendezVousManager.agent1Console;
+  }
+  getAgent2Console() {
+    this.agent2Console =  this._rendezVousManager.agent2Console;
+  }
   getTransformedLabel1(): string {
     return this._rendezVousManager.transofrmedLabel1;
   }
@@ -206,6 +214,10 @@ export class NetworkGraphComponent implements OnInit {
       this.updateCounter();
     }, () => {
       this.rendezvousDone();
+    }, () => {
+      this.getAgent1Console();
+    }, () => {
+      this.getAgent2Console();
     });
   }
   executeCurrentBit() {
@@ -223,6 +235,8 @@ export class NetworkGraphComponent implements OnInit {
   generateGraph() {
     this.clear();
     this._rendezVousManager.clear();
+    this.agent1Console = '';
+    this.agent2Console = '';
     this.rendererGraph(25);
     this.nodeIds = this.nodes.getIds();
     this.deltaMax = this._rendezVousManager.getDeltaMax();

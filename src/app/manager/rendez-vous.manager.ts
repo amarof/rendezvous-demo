@@ -15,6 +15,8 @@ export class RendezVousManager {
   public SecondAgent: Agent;
   public stopAfterEachRound = false;
   public allowRDVWithSameBit = false;
+  public agent1Console  = '';
+  public agent2Console  = '';
   private Network: Graph = new Graph();
   private agent1Label = '1';
   private agent2Label = '2';
@@ -39,6 +41,8 @@ export class RendezVousManager {
   private updateTransformedLabels: () => void;
   private updateCounter: () => void;
   private rendezvousDone: () => any;
+  private getAgent1Console: () => any;
+  private getAgent2Console: () => any;
   constructor() {}
 
   register(nodes: DataSet, edges: DataSet, visNetwork: Network) {
@@ -50,6 +54,8 @@ export class RendezVousManager {
     this.Network = new Graph();
     this.FirstAgent = new Agent(this.agent1Label);
     this.SecondAgent = new Agent(this.agent2Label);
+    this.agent1Console = '';
+    this.agent2Console = '';
   }
   addNode(id: string) {
     this.Network.addNode(id);
@@ -152,10 +158,13 @@ export class RendezVousManager {
       this.edges.update(edgesToSelect);
     }
   }
-  run(updateTransformedLabels: () => any , updateCounter: () => any, rendezvousDone: () => any) {
+  run(updateTransformedLabels: () => any , updateCounter: () => any, rendezvousDone: () => any,
+   getAgent1Console: () => any, getAgent2Console: () => any) {
     this.updateTransformedLabels = updateTransformedLabels;
     this.updateCounter = updateCounter;
     this.rendezvousDone = rendezvousDone;
+    this.getAgent1Console = getAgent1Console;
+    this.getAgent2Console = getAgent2Console;
     this.initWorker();
     this.start();
   }
@@ -344,6 +353,9 @@ export class RendezVousManager {
           }
         }
         this.agent1CurrentBit = Number(event.data.bit);
+      } else if (event.data.messageToConsole !== undefined) {
+        this.agent1Console += event.data.messageToConsole;
+        this.getAgent1Console();
       }
     };
     this.agent2Worker.onmessage = (event) => {
@@ -377,6 +389,9 @@ export class RendezVousManager {
           }
         }
         this.agent2CurrentBit = Number(event.data.bit);
+      } else if (event.data.messageToConsole !== undefined) {
+        this.agent2Console += event.data.messageToConsole;
+        this.getAgent2Console();
       }
     };
   } // start

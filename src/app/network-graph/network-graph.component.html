@@ -100,7 +100,7 @@
             </tab>
             <tab>
               <ng-template tabHeading>Console</ng-template>
-              <textarea id="agent1-console" name="agent1-console" rows="9" class="form-control" placeholder="Console Agent 1..."></textarea>
+              <textarea id="agent1-console" name="agent1-console" rows="9"  [(ngModel)]='agent1Console' class="form-control" placeholder="Console Agent 1..."></textarea>
             </tab>
           </tabset>
         </div><!--/.col-->
@@ -149,7 +149,7 @@
             </tab>
             <tab>
               <ng-template tabHeading>Console</ng-template>
-              <textarea id="agent2-console" name="agent2-console" rows="9" class="form-control" placeholder="Console Agent 2..."></textarea>
+              <textarea id="agent2-console" name="agent2-console" [(ngModel)]='agent2Console' rows="9" class="form-control" placeholder="Console Agent 2..."></textarea>
             </tab>
           </tabset>
         </div><!--/.col-->
