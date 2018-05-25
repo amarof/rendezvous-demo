@@ -148,12 +148,12 @@ export class RendezVousManager {
       for (let index = 0; index < ids.length; index++) {
         const id = ids[index];
         const edge = this.edges.get(id);
-        edge.color = {color: 'blue', highlight: 'blue'};
+        edge.color = {color: '#669999', highlight: '#669999'};
         this.edges.update(edge);
       }
       // set new color
       for (let index = 0; index < edgesToSelect.length; index++) {
-        edgesToSelect[index].color = {color: 'red', highlight: 'red'};
+        edgesToSelect[index].color = {color: '#99ff66', highlight: '#99ff66'};
       }
       this.edges.update(edgesToSelect);
     }
@@ -195,7 +195,7 @@ export class RendezVousManager {
     this.FirstAgent.CurrentNode = this.Network.getNodeById(nodeId);
     this.nodes.update([oldNodePos, newNodePos]);
   }
-  moveAgent2ToNode(nodeId: string){
+  moveAgent2ToNode(nodeId: string) {
     const oldNodePos: Node = this.nodes.get(this.SecondAgent.CurrentNode.Id);
     oldNodePos.shape = 'ellipse';
     oldNodePos.image = '';

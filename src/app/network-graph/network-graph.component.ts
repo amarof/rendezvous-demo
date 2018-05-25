@@ -63,6 +63,7 @@ export class NetworkGraphComponent implements OnInit {
           const nodeId  = this.nodes.length + 1;
           data.label =  '';
           data.id =  nodeId;
+          data.color = '#669999';
           this._rendezVousManager.addNode(nodeId);
           callback(data);
           this.nodeIds = this.nodes.getIds();
@@ -78,7 +79,7 @@ export class NetworkGraphComponent implements OnInit {
         },
         // tslint:disable-next-line:no-shadowed-variable
         addEdge: (data, callback) => {
-          data.color = {color: 'blue'};
+          data.color = '#669999';
           this._rendezVousManager.addEdge(data.from, data.to);
           callback(data);
           this.deltaMax = this._rendezVousManager.getDeltaMax();
@@ -292,7 +293,8 @@ export class NetworkGraphComponent implements OnInit {
       const nodeId: any  = i;
       const node = {
         id: nodeId,
-        label: ''
+        label: '',
+        color: '#669999'
       };
       this.nodes.add(node);
       this._rendezVousManager.addNode(nodeId);
@@ -304,7 +306,7 @@ export class NetworkGraphComponent implements OnInit {
         // tslint:disable-next-line:no-shadowed-variable
         const to = 0;
         const edge = {
-          color : {color: 'blue', highlight: 'blue'},
+          color : '#669999',
           from: from,
           to: to
         };
@@ -324,7 +326,7 @@ export class NetworkGraphComponent implements OnInit {
         const from = i;
         const to = j;
         const edge = {
-          color : {color: 'blue', highlight: 'blue'},
+          color : '#669999',
           from: from,
           to: to
         };
