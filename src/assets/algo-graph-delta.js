@@ -8,7 +8,7 @@ var transformedLabel = [];
 var roundCounter  = 0;
 var visitedNodeCount = 0;
 var rendezVousHappen = false;
-var nodeVisitTime = 1;
+var nodeVisitTime = 1000;
 var shift = 0;
 var consoleCounter = 1;
 onmessage = function(e) {
@@ -97,7 +97,7 @@ function runThroughBall(){
     for (var index = 0; index < pathCount; index++) {
         var c = list.join(',');
         writeToConsole('Début de parcours du chemin:' + c + ' en revenant par le chemin rebours' );
-        this.goAndBackThroughPath(list);
+        nodeCount += this.goAndBackThroughPath(list);
         writeToConsole('Fin de parcours du chemin:' + c + ' en revenant par le chemin rebours' );
         list = this.getPath(list);
         if (this.rendezVousHappen) {
@@ -109,7 +109,7 @@ function runThroughBall(){
     return nodeCount;
 }
 function goAndBackThroughPath(list) {
-    // console.log(this.agent.Label + 'Start go forward path:' + list.join('=>'));
+    var nodeCount = 0;
     var inversePath = [];
     for (var portIndex = 0; portIndex < list.length; portIndex++) {
         var portId = list[portIndex];
@@ -120,6 +120,7 @@ function goAndBackThroughPath(list) {
             this.agent.CurrentNode = getNodeById(nodeId);
             // console.log('forward agent' + this.agent.Label + ' current node:' + this.agent.CurrentNode.Id);
             moveToNode(nodeId);
+            nodeCount++;
         } else {
             break;
         }
@@ -139,7 +140,9 @@ function goAndBackThroughPath(list) {
         this.agent.CurrentNode = getNodeById(nId);
         // console.log('backward agent' + this.agent.Label + ' current node:' + this.agent.CurrentNode.Id);
         moveToNode(nId); 
+        nodeCount++;
     }    
+    return nodeCount;
 }
 function getPath(list){
     for (var index = list.length - 1; index >= 0; index--) {

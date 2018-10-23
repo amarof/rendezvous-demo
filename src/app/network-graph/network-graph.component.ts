@@ -1,6 +1,9 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Network, DataSet, Node, Edge, IdType } from 'vis';
 import { RendezVousManager } from '../manager/rendez-vous.manager';
+
+declare var visAnimUpdater: any;
+
 @Component({
   templateUrl: './network-graph.component.html',
   providers: [ RendezVousManager ]
@@ -204,6 +207,7 @@ export class NetworkGraphComponent implements OnInit {
     this._rendezVousManager.setSecondAgentPosition(nodeId);
     this.distance = this._rendezVousManager.distance;
   }
+
   start() {
     // init edges color
     const ids = this.edges.getIds();

@@ -43,6 +43,8 @@ export class RendezVousManager {
   private rendezvousDone: () => any;
   private getAgent1Console: () => any;
   private getAgent2Console: () => any;
+  private isRDV = false;
+  private rdvNodeId = '';
   constructor() {}
 
   register(nodes: DataSet, edges: DataSet, visNetwork: Network) {
@@ -56,6 +58,7 @@ export class RendezVousManager {
     this.SecondAgent = new Agent(this.agent2Label);
     this.agent1Console = '';
     this.agent2Console = '';
+    this.isRDV = false;
   }
   addNode(id: string) {
     this.Network.addNode(id);
@@ -165,6 +168,7 @@ export class RendezVousManager {
     this.rendezvousDone = rendezvousDone;
     this.getAgent1Console = getAgent1Console;
     this.getAgent2Console = getAgent2Console;
+    this.isRDV = false;
     this.initWorker();
     this.start();
   }
@@ -193,7 +197,25 @@ export class RendezVousManager {
      newNodePos.x = undefined;
      newNodePos.y = undefined;
     this.FirstAgent.CurrentNode = this.Network.getNodeById(nodeId);
-    this.nodes.update([oldNodePos, newNodePos]);
+    this.nodes.update([oldNodePos]);
+    // animate
+    const oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
+    const newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
+    const edges = oldNodeEdges.filter(value => -1 !== newNodeEdges.indexOf(value));
+    const edgeId = edges[0];
+    const edge  = this.edges.get(edgeId);
+    let backward =  false;
+    if (edge.from !== oldNodePos.id ) {
+      backward = true;
+    }
+    this.visNetwork.animateTraffic([
+             {edge: edgeId, trafficSize: 5, isBackward : backward}
+         ], 0.1, 'red', function() {}, function() {}, function() { } , () => {
+          this.nodes.update([oldNodePos, newNodePos]);
+          if (this.isRDV) {
+            this.theRendezVousIsDone();
+          }
+         });
   }
   moveAgent2ToNode(nodeId: string) {
     const oldNodePos: Node = this.nodes.get(this.SecondAgent.CurrentNode.Id);
@@ -212,7 +234,25 @@ export class RendezVousManager {
     newNodePos.x = undefined;
     newNodePos.y = undefined;
     this.SecondAgent.CurrentNode = this.Network.getNodeById(nodeId);
-    this.nodes.update([oldNodePos, newNodePos]);
+    this.nodes.update([oldNodePos]);
+    // animate
+    const oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
+    const newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
+    const edges = oldNodeEdges.filter(value => -1 !== newNodeEdges.indexOf(value));
+    const edgeId = edges[0];
+    const edge  = this.edges.get(edgeId);
+    let backward =  false;
+    if (edge.from !== oldNodePos.id ) {
+      backward = true;
+    }
+    this.visNetwork.animateTraffic([
+             {edge: edgeId, trafficSize: 5, isBackward : backward}
+         ], 0.1, 'blue', function() {}, function() {}, function() { } , () => {
+          this.nodes.update([oldNodePos, newNodePos]);
+          if (this.isRDV) {
+            this.theRendezVousIsDone();
+          }
+         });
   }
   setRendezVous(nodeId: any) {
       const rendezVousNode: Node = this.nodes.get(nodeId);
@@ -241,7 +281,7 @@ export class RendezVousManager {
     this.initialAgent2Node = this.SecondAgent.CurrentNode;
     const delta = this.Network.getMaxNeighbours();
     console.log('Delta is:' + delta);
-    const nodeVisitTime = 1;
+    const nodeVisitTime = 500;
     const visitedNodeCount = this.getBouleTime(); // 2 * this.distance * delta * (Math.pow( delta - 1, this.distance - 1));
     const roundTime = (visitedNodeCount * nodeVisitTime * 2);
 
@@ -325,24 +365,20 @@ export class RendezVousManager {
     this.agent1Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
         const nodeId = event.data.moveToNode;
-        let isRDV = false;
         this.moveAgent1ToNode(nodeId);
         if (this.allowRDVWithSameBit) {
           if ( this.SecondAgent.CurrentNode.Id === nodeId) {
-            isRDV = true;
+            this.isRDV = true;
           }
         } else {
           if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
           this.initialAgent2Node.Id === nodeId) {
-            isRDV = true;
+            this.isRDV = true;
           }
         }
-        if (isRDV) {
-          console.log('OUTSIDE: agent1 find agent 2:  RDV DONE:');
-          this.agent1Worker.terminate();
-          this.agent2Worker.terminate();
-          this.setRendezVous(nodeId);
-          this.rendezvousDone();
+        if (this.isRDV) {
+          this.rdvNodeId = nodeId;
+          this.theRendezVousIsDone();
         }
       } else if (event.data.bit !== undefined) {
         this.syncBits += 1;
@@ -360,25 +396,21 @@ export class RendezVousManager {
     };
     this.agent2Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
-        const nodeId = event.data.moveToNode;
-        let isRDV = false;
+        const nodeId = event.data.moveToNode;        
         this.moveAgent2ToNode(nodeId);
         if (this.allowRDVWithSameBit) {
           if (this.FirstAgent.CurrentNode.Id === nodeId) {
-            isRDV = true;
+            this.isRDV = true;
           }
         } else {
           if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
           this.initialAgent1Node.Id === nodeId) {
-            isRDV = true;
+            this.isRDV = true;
           }
         }
-        if (isRDV) {
-          console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
-          this.agent1Worker.terminate();
-          this.agent2Worker.terminate();
-          this.setRendezVous(nodeId);
-          this.rendezvousDone();
+        if (this.isRDV) {
+          this.rdvNodeId = nodeId;
+          this.theRendezVousIsDone();
         }
       } else if (event.data.bit !== undefined) {
         this.syncBits += 1;
@@ -415,6 +447,13 @@ export class RendezVousManager {
     } else {
       this.agent2Worker.postMessage({action: '*'});
     }
+  }
+  theRendezVousIsDone() {
+    console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
+    this.agent1Worker.terminate();
+    this.agent2Worker.terminate();
+    this.setRendezVous(this.rdvNodeId);
+    this.rendezvousDone();
   }
 
 }
