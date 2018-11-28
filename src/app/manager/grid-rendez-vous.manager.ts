@@ -1,10 +1,10 @@
 import { Injectable, Input } from '@angular/core';
-import { Graph } from '../data/graph';
+import { Grid } from '../data/grid';
 import { Agent } from '../data/agent';
 import { Network, DataSet, Node, Edge, IdType } from 'vis';
 import { Dijkstra, Vertex } from '../algorithm/dijkstra';
 @Injectable()
-export class RendezVousManager {
+export class GridRendezVousManager {
 
 
   public RendezVousNodeId: String = '';
@@ -17,7 +17,7 @@ export class RendezVousManager {
   public allowRDVWithSameBit = false;
   public agent1Console  = '';
   public agent2Console  = '';
-  private Network: Graph = new Graph();
+  private Network: Grid = new Grid();
   private agent1Label = '1';
   private agent2Label = '2';
   private initialAgent1Node: any;
@@ -53,24 +53,21 @@ export class RendezVousManager {
     this.visNetwork = visNetwork;
    }
    clear(): any {
-    this.Network = new Graph();
+    this.Network = new Grid();
     this.FirstAgent = new Agent(this.agent1Label);
     this.SecondAgent = new Agent(this.agent2Label);
     this.agent1Console = '';
     this.agent2Console = '';
     this.isRDV = false;
   }
-  addNode(id: string) {
-    this.Network.addNode(id);
+  addPoint(id: string) {
+    this.Network.addPoint(id);
   }
-  deleteNode(id: string) {
-    this.Network.deleteNode(id);
+  setNorth(s: string, d: string) {
+    this.Network.setNorth(s, d);
   }
-  addEdge(source: string, destination: string) {
-    this.Network.addEdge(source, destination);
-  }
-  deleteEdge(source: string, destination: string) {
-    this.Network.deleteEdge(source, destination);
+  setWest(s: string, d: string) {
+    this.Network.setWest(s, d);
   }
   setSecondAgentLabel(label: any): any {
     this.agent2Label = label;
@@ -88,14 +85,14 @@ export class RendezVousManager {
     this.agent2Label = label;
     this.SecondAgent = new Agent(label);
   }
-  setFirstAgentPosition(nodeId: string){
-    const node = this.Network.getNodeById(nodeId);
-    this.FirstAgent.CurrentNode = node;
+  setFirstAgentPosition(pointId: string){
+    const point = this.Network.getPointById(pointId);
+    this.FirstAgent.CurrentPoint = point;
     this.calculateDistance();
   }
-  setSecondAgentPosition(nodeId: string) {
-    const node = this.Network.getNodeById(nodeId);
-    this.SecondAgent.CurrentNode = node;
+  setSecondAgentPosition(pointId: string) {
+    const point = this.Network.getPointById(pointId);
+    this.SecondAgent.CurrentPoint = point;
     this.calculateDistance();
     if (this.RendezVousNodeId !== '') {
       const n: Node = this.nodes.get(this.RendezVousNodeId);
@@ -107,7 +104,7 @@ export class RendezVousManager {
     }
   }
   calculateDistance() {
-    if (this.SecondAgent.CurrentNode != null && this.FirstAgent.CurrentNode != null) {
+    if (this.SecondAgent.CurrentPoint != null && this.FirstAgent.CurrentPoint != null) {
       const dijkstra = new Dijkstra();
        this.nodes.forEach(node => {
         const connectedEdges = this.edges.get({
@@ -125,7 +122,7 @@ export class RendezVousManager {
         });
         dijkstra.addVertex(new Vertex(node.id, connectVertex, 1));
       });
-      const path = dijkstra.findShortestWay( this.FirstAgent.CurrentNode.Id , this.SecondAgent.CurrentNode.Id);
+      const path = dijkstra.findShortestWay( this.FirstAgent.CurrentPoint.Id , this.SecondAgent.CurrentPoint.Id);
       this.distance = Number(path[path.length - 1]);
       // draw the path
       const edgesToSelect = [];
@@ -146,7 +143,14 @@ export class RendezVousManager {
           });
           edgesToSelect.push(edges[0]);
       });
-      this.clearPreviousEdgeColor();
+      // clear previous color
+      const ids = this.edges.getIds();
+      for (let index = 0; index < ids.length; index++) {
+        const id = ids[index];
+        const edge = this.edges.get(id);
+        edge.color = {color: '#669999', highlight: '#669999'};
+        this.edges.update(edge);
+      }
       // set new color
       for (let index = 0; index < edgesToSelect.length; index++) {
         edgesToSelect[index].color = {color: 'blue', highlight: 'blue'};
@@ -156,18 +160,6 @@ export class RendezVousManager {
       this.edges.update(edgesToSelect);
     }
   }
-  clearPreviousEdgeColor() {
-      // clear previous color
-      const ids = this.edges.getIds();
-      for (let index = 0; index < ids.length; index++) {
-        const id = ids[index];
-        const edge = this.edges.get(id);
-        edge.color = {color: '#669999', highlight: '#669999'};
-        edge.dashes = false;
-        edge.width = 1;
-        this.edges.update(edge);
-      }
-  }
   run(updateTransformedLabels: () => any , updateCounter: () => any, rendezvousDone: () => any,
    getAgent1Console: () => any, getAgent2Console: () => any) {
     this.updateTransformedLabels = updateTransformedLabels;
@@ -176,7 +168,6 @@ export class RendezVousManager {
     this.getAgent1Console = getAgent1Console;
     this.getAgent2Console = getAgent2Console;
     this.isRDV = false;
-    this.clearPreviousEdgeColor();
     this.initWorker();
     this.start();
   }
@@ -189,7 +180,7 @@ export class RendezVousManager {
     }
   }
   moveAgent1ToNode(nodeId: string) {
-     const oldNodePos: Node = this.nodes.get(this.FirstAgent.CurrentNode.Id);
+     const oldNodePos: Node = this.nodes.get(this.FirstAgent.CurrentPoint.Id);
      oldNodePos.shape = 'ellipse';
      oldNodePos.image = '';
      oldNodePos.x = undefined;
@@ -204,7 +195,7 @@ export class RendezVousManager {
      };
      newNodePos.x = undefined;
      newNodePos.y = undefined;
-    this.FirstAgent.CurrentNode = this.Network.getNodeById(nodeId);
+    this.FirstAgent.CurrentPoint = this.Network.getPointById(nodeId);
     this.nodes.update([oldNodePos]);
     // animate
     const oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
@@ -226,7 +217,7 @@ export class RendezVousManager {
          });
   }
   moveAgent2ToNode(nodeId: string) {
-    const oldNodePos: Node = this.nodes.get(this.SecondAgent.CurrentNode.Id);
+    const oldNodePos: Node = this.nodes.get(this.SecondAgent.CurrentPoint.Id);
     oldNodePos.shape = 'ellipse';
     oldNodePos.image = '';
     oldNodePos.x = undefined;
@@ -241,7 +232,7 @@ export class RendezVousManager {
     };
     newNodePos.x = undefined;
     newNodePos.y = undefined;
-    this.SecondAgent.CurrentNode = this.Network.getNodeById(nodeId);
+    this.SecondAgent.CurrentPoint = this.Network.getPointById(nodeId);
     this.nodes.update([oldNodePos]);
     // animate
     const oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
@@ -277,30 +268,18 @@ export class RendezVousManager {
   getAgent2TransofrmedLabel() {
     this.FirstAgent.getTransformedLabel();
   }
-  getDeltaMax(): number {
-    return this.Network.getMaxNeighbours();
-  }
-  getBouleTime(): number {
-    const delta = this.Network.getMaxNeighbours();
-    return 2 * this.distance * delta * (Math.pow( delta - 1, this.distance - 1));
-  }
   initWorker() {
-    this.initialAgent1Node = this.FirstAgent.CurrentNode;
-    this.initialAgent2Node = this.SecondAgent.CurrentNode;
-    const delta = this.Network.getMaxNeighbours();
-    console.log('Delta is:' + delta);
-    const nodeVisitTime = 500;
-    const visitedNodeCount = this.getBouleTime(); // 2 * this.distance * delta * (Math.pow( delta - 1, this.distance - 1));
-    const roundTime = (visitedNodeCount * nodeVisitTime * 2);
+    this.initialAgent1Node = this.FirstAgent.CurrentPoint;
+    this.initialAgent2Node = this.SecondAgent.CurrentPoint;
+    const nodeVisitTime = 400;
 
-    this.agent1Worker = new Worker('assets/algo-graph-delta.js');
-    this.agent2Worker = new Worker('assets/algo-graph-delta.js');
+    this.agent1Worker = new Worker('assets/algo-grid-spiral.js');
+    this.agent2Worker = new Worker('assets/algo-grid-spiral.js');
     const agent1params = {
       action: 'init',
       params: {
         agent : this.FirstAgent,
         distance: this.distance,
-        maxNeighbours : delta,
         graph : this.Network,
         nodeVisitTime: nodeVisitTime,
         shift : this.FirstAgent.Shift
@@ -312,7 +291,6 @@ export class RendezVousManager {
       params: {
         agent : this.SecondAgent,
         distance: this.distance,
-        maxNeighbours : delta,
         graph : this.Network,
         nodeVisitTime : nodeVisitTime,
         shift : this.SecondAgent.Shift
@@ -375,11 +353,11 @@ export class RendezVousManager {
         const nodeId = event.data.moveToNode;
         this.moveAgent1ToNode(nodeId);
         if (this.allowRDVWithSameBit) {
-          if ( this.SecondAgent.CurrentNode.Id === nodeId) {
+          if ( this.SecondAgent.CurrentPoint.Id === nodeId) {
             this.isRDV = true;
           }
         } else {
-          if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentNode.Id === nodeId &&
+          if (this.currentAgent2Bit === '0'  && this.SecondAgent.CurrentPoint.Id === nodeId &&
           this.initialAgent2Node.Id === nodeId) {
             this.isRDV = true;
           }
@@ -404,14 +382,14 @@ export class RendezVousManager {
     };
     this.agent2Worker.onmessage = (event) => {
       if (event.data.moveToNode !== undefined) {
-        const nodeId = event.data.moveToNode;        
+        const nodeId = event.data.moveToNode;
         this.moveAgent2ToNode(nodeId);
         if (this.allowRDVWithSameBit) {
-          if (this.FirstAgent.CurrentNode.Id === nodeId) {
+          if (this.FirstAgent.CurrentPoint.Id === nodeId) {
             this.isRDV = true;
           }
         } else {
-          if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentNode.Id === nodeId  &&
+          if (this.currentAgent1Bit === '0' &&  this.FirstAgent.CurrentPoint.Id === nodeId  &&
           this.initialAgent1Node.Id === nodeId) {
             this.isRDV = true;
           }

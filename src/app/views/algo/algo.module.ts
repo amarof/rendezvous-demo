@@ -6,6 +6,7 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 // Theme Routing
 import { AlgoRoutingModule } from './algo-routing.module';
 import { NetworkGraphComponent } from '../../network-graph/network-graph.component';
+import { GridGraphComponent } from '../../grid-graph/grid-graph.component';
 
 @NgModule({
   imports: [
@@ -15,7 +16,8 @@ import { NetworkGraphComponent } from '../../network-graph/network-graph.compone
     FormsModule
   ],
   declarations: [
-    NetworkGraphComponent
+    NetworkGraphComponent,
+    GridGraphComponent
   ]
 })
 export class AlgoModule { }

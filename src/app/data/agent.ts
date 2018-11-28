@@ -1,8 +1,10 @@
 import {Node} from './node';
+import {Point} from './point';
 import { angularMath } from 'angular-ts-math';
 export class Agent {
     public Label: string ;
     public CurrentNode: Node;
+    public CurrentPoint: Point;
     public Shift = 0;
     public agent2Shit = 0;
     constructor(label: string) {

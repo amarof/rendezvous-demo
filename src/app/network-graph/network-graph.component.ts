@@ -57,7 +57,7 @@ export class NetworkGraphComponent implements OnInit {
         }
       },
       interaction: {
-        hover: true
+        hover: true,
       },
       manipulation: {
         enabled: true,
