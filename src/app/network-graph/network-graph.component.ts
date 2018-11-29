@@ -47,7 +47,7 @@ export class NetworkGraphComponent implements OnInit {
     };
     const options = {
       physics : {
-        enabled: true,
+        enabled: false,
         stabilization: {
           enabled: true,
           iterations: 1000,
@@ -85,6 +85,10 @@ export class NetworkGraphComponent implements OnInit {
           data.color = '#669999';
           this._rendezVousManager.addEdge(data.from, data.to);
           callback(data);
+          this.edges.add({
+            from:  data.to,
+            to: data.from
+          });
           this.deltaMax = this._rendezVousManager.getDeltaMax();
         },
         // tslint:disable-next-line:no-shadowed-variable

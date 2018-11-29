@@ -380,7 +380,7 @@ var navItems = [
     },
     {
         name: 'Grille',
-        url: '/theme/typography',
+        url: '/algo/grid',
         icon: 'icon-grid'
     }
 ];

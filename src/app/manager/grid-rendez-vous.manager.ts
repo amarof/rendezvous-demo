@@ -45,6 +45,8 @@ export class GridRendezVousManager {
   private getAgent2Console: () => any;
   private isRDV = false;
   private rdvNodeId = '';
+  private traficAnimationSpeed = 4;
+  private nodeVisitTime = 1000;
   constructor() {}
 
   register(nodes: DataSet, edges: DataSet, visNetwork: Network) {
@@ -125,7 +127,7 @@ export class GridRendezVousManager {
       const path = dijkstra.findShortestWay( this.FirstAgent.CurrentPoint.Id , this.SecondAgent.CurrentPoint.Id);
       this.distance = Number(path[path.length - 1]);
       // draw the path
-      const edgesToSelect = [];
+    /*  const edgesToSelect = [];
       const edgesIds = [];
       for (let index = 0; index <= path.length - 2; index++) {
         if ( (index - 1) > -1) {
@@ -157,7 +159,7 @@ export class GridRendezVousManager {
         edgesToSelect[index].dashes = true;
         edgesToSelect[index].width = 5;
       }
-      this.edges.update(edgesToSelect);
+      this.edges.update(edgesToSelect);*/
     }
   }
   run(updateTransformedLabels: () => any , updateCounter: () => any, rendezvousDone: () => any,
@@ -209,7 +211,7 @@ export class GridRendezVousManager {
     }
     this.visNetwork.animateTraffic([
              {edge: edgeId, trafficSize: 5, isBackward : backward}
-         ], 0.1, 'red', function() {}, function() {}, function() { } , () => {
+    ], this.traficAnimationSpeed * 3 , 'red', function() {}, function() {}, function() { } , () => {
           this.nodes.update([oldNodePos, newNodePos]);
           if (this.isRDV) {
             this.theRendezVousIsDone();
@@ -246,7 +248,7 @@ export class GridRendezVousManager {
     }
     this.visNetwork.animateTraffic([
              {edge: edgeId, trafficSize: 5, isBackward : backward}
-         ], 0.1, 'blue', function() {}, function() {}, function() { } , () => {
+         ], this.traficAnimationSpeed * 3, 'blue', function() {}, function() {}, function() { } , () => {
           this.nodes.update([oldNodePos, newNodePos]);
           if (this.isRDV) {
             this.theRendezVousIsDone();
@@ -270,8 +272,7 @@ export class GridRendezVousManager {
   }
   initWorker() {
     this.initialAgent1Node = this.FirstAgent.CurrentPoint;
-    this.initialAgent2Node = this.SecondAgent.CurrentPoint;
-    const nodeVisitTime = 400;
+    this.initialAgent2Node = this.SecondAgent.CurrentPoint;    
 
     this.agent1Worker = new Worker('assets/algo-grid-spiral.js');
     this.agent2Worker = new Worker('assets/algo-grid-spiral.js');
@@ -281,7 +282,7 @@ export class GridRendezVousManager {
         agent : this.FirstAgent,
         distance: this.distance,
         graph : this.Network,
-        nodeVisitTime: nodeVisitTime,
+        nodeVisitTime: this.nodeVisitTime,
         shift : this.FirstAgent.Shift
       }
     };
@@ -292,7 +293,7 @@ export class GridRendezVousManager {
         agent : this.SecondAgent,
         distance: this.distance,
         graph : this.Network,
-        nodeVisitTime : nodeVisitTime,
+        nodeVisitTime : this.nodeVisitTime,
         shift : this.SecondAgent.Shift
       }
     };

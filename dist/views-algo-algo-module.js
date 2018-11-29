@@ -370,7 +370,7 @@ var angularMath;
  * A dynamic, browser-based visualization library.
  *
  * @version 4.21.0
- * @date    2018-10-21
+ * @date    2018-10-24
  *
  * @license
  * Copyright (C) 2011-2017 Almende B.V, http://almende.com
@@ -43372,8 +43372,7 @@ Network.prototype.getOptionsFromConfigurator = function () {
 };
 
 // ---------------------------------------------
-Network.prototype.animateTraffic = function (edgesTrafficList, onPreAnimationHandler, onPreAnimateFrameHandler, onPostAnimateFrameHandler, onPostAnimationHandler) {
-
+Network.prototype.animateTraffic = function (edgesTrafficList, speed, nodeColor, onPreAnimationHandler, onPreAnimateFrameHandler, onPostAnimateFrameHandler, onPostAnimationHandler) {
   var thisAnimator = this;
 
   var trafficAnimator = {
@@ -43449,7 +43448,7 @@ Network.prototype.animateTraffic = function (edgesTrafficList, onPreAnimationHan
 
     //////////////////////////////////////////////////////////////
     //
-    animateFrame: function animateFrame(offset, frameCounter) {
+    animateFrame: function animateFrame(offset, frameCounter, speed, nodeColor) {
 
       this.clearAnimationCanvas();
 
@@ -43477,14 +43476,15 @@ Network.prototype.animateTraffic = function (edgesTrafficList, onPreAnimationHan
           continue;
         }
 
+        //              var s = edgeTraffic.edge.body.view.scale;
+        //              var t = edgeTraffic.edge.body.view.translation;
         var p = edgeTraffic.edge.edgeType.getPoint(edgeTraffic.isBackward ? maxOffset - offset : offset);
 
         this.trafficCanvasCtx.beginPath();
         this.trafficCanvasCtx.arc(p.x, p.y, parseInt(edgeTraffic.trafficSize) || 1, 0, Math.PI * 2, false);
         this.trafficCanvasCtx.lineWidth = 1;
-        this.trafficCanvasCtx.strokeWidth = 4;
-        this.trafficCanvasCtx.strokeStyle = "rgba(57,138,255,0.1)";
-        this.trafficCanvasCtx.fillStyle = "#1262e3";
+        this.trafficCanvasCtx.strokeStyle = "#000";
+        this.trafficCanvasCtx.fillStyle = nodeColor;
         this.trafficCanvasCtx.fill();
         this.trafficCanvasCtx.stroke();
         this.trafficCanvasCtx.closePath();
@@ -43495,7 +43495,7 @@ Network.prototype.animateTraffic = function (edgesTrafficList, onPreAnimationHan
         }
       }
 
-      setTimeout(this.animateFrame.bind(this), 10, offset + .01, frameCounter++);
+      setTimeout(this.animateFrame.bind(this), speed, offset + .02, frameCounter++, speed, nodeColor);
     },
 
     //////////////////////////////////////////////////////////////
@@ -43530,7 +43530,7 @@ Network.prototype.animateTraffic = function (edgesTrafficList, onPreAnimationHan
 
   if (trafficAnimator.onPreAnimation && trafficAnimator.onPreAnimation(trafficAnimator.edgesTrafficList) === false) return;
 
-  trafficAnimator.animateFrame(0.1 /*animationStartOffset*/, 0 /*frame*/);
+  trafficAnimator.animateFrame(0.1 /*animationStartOffset*/, 0 /*frame*/, speed, nodeColor);
 };
 
 Network.prototype.animateTrafficOnPostAnimation = function (edgesTrafficList) {
@@ -43543,7 +43543,7 @@ Network.prototype.animateTrafficOnPostAnimation = function (edgesTrafficList) {
     var toValue = edgeTraffic.edge.to.getValue();
     if (parseFloat(toValue)) {
 
-      var newValue = (toValue || 0) + (edgeTraffic.isBackward ? -1 : 1) * edgeTraffic.trafficSize;
+      var newValue = (toValue || 0)(edgeTraffic.isBackward ? -1 : 1) * edgeTraffic.trafficSize;
 
       this.thisNetwork.body.data.nodes.update({ id: edgeTraffic.edge.toId, value: newValue });
     }
@@ -60693,6 +60693,83 @@ var Graph = /** @class */ (function () {
 
 /***/ }),
 
+/***/ "./src/app/data/grid.ts":
+/*!******************************!*\
+  !*** ./src/app/data/grid.ts ***!
+  \******************************/
+/*! exports provided: Grid */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Grid", function() { return Grid; });
+/* harmony import */ var _point__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./point */ "./src/app/data/point.ts");
+
+var Grid = /** @class */ (function () {
+    function Grid() {
+        this.Points = [];
+    }
+    Grid.prototype.addPoint = function (id) {
+        this.Points.push(new _point__WEBPACK_IMPORTED_MODULE_0__["Point"](id));
+    };
+    Grid.prototype.setNorth = function (source, destination) {
+        // tslint:disable-next-line:triple-equals
+        var sourcePoint = this.Points.find(function (n) { return n.Id == source; });
+        // tslint:disable-next-line:triple-equals
+        var destinationPoint = this.Points.find(function (n) { return n.Id == destination; });
+        if (sourcePoint !== null && destinationPoint !== null) {
+            sourcePoint.North = destinationPoint;
+            destinationPoint.South = sourcePoint;
+        }
+    };
+    Grid.prototype.setWest = function (source, destination) {
+        // tslint:disable-next-line:triple-equals
+        var sourcePoint = this.Points.find(function (n) { return n.Id == source; });
+        // tslint:disable-next-line:triple-equals
+        var destinationPoint = this.Points.find(function (n) { return n.Id == destination; });
+        if (sourcePoint !== null && destinationPoint !== null) {
+            sourcePoint.West = destinationPoint;
+            destinationPoint.East = sourcePoint;
+        }
+    };
+    Grid.prototype.getPointById = function (pointId) {
+        // tslint:disable-next-line:triple-equals
+        var point = this.Points.find(function (n) { return n.Id == pointId; });
+        if (point === null || point === undefined) {
+            throw new Error('grid with id ' + pointId + ' not found.');
+        }
+        return point;
+    };
+    return Grid;
+}());
+
+
+
+/***/ }),
+
+/***/ "./src/app/data/movement.ts":
+/*!**********************************!*\
+  !*** ./src/app/data/movement.ts ***!
+  \**********************************/
+/*! exports provided: Movement */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Movement", function() { return Movement; });
+var Movement = /** @class */ (function () {
+    function Movement() {
+    }
+    Movement.prototype.IsSamePosition = function () {
+        return this.From === this.To;
+    };
+    return Movement;
+}());
+
+
+
+/***/ }),
+
 /***/ "./src/app/data/node.ts":
 /*!******************************!*\
   !*** ./src/app/data/node.ts ***!
@@ -60733,6 +60810,864 @@ var Node = /** @class */ (function () {
 
 /***/ }),
 
+/***/ "./src/app/data/point.ts":
+/*!*******************************!*\
+  !*** ./src/app/data/point.ts ***!
+  \*******************************/
+/*! exports provided: Point, PointDirection */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointDirection", function() { return PointDirection; });
+var Point = /** @class */ (function () {
+    function Point(id) {
+        this.North = null;
+        this.South = null;
+        this.East = null;
+        this.West = null;
+        this.Id = id;
+    }
+    return Point;
+}());
+
+var PointDirection;
+(function (PointDirection) {
+    PointDirection[PointDirection["NORTH"] = 0] = "NORTH";
+    PointDirection[PointDirection["SOUTH"] = 1] = "SOUTH";
+    PointDirection[PointDirection["EAST"] = 2] = "EAST";
+    PointDirection[PointDirection["WEST"] = 3] = "WEST";
+})(PointDirection || (PointDirection = {}));
+
+
+/***/ }),
+
+/***/ "./src/app/grid-graph/grid-graph.component.html":
+/*!******************************************************!*\
+  !*** ./src/app/grid-graph/grid-graph.component.html ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = "<div class=\"animated fadeIn\"> \n  <div class=\"card\">\n    <div class=\"card-body\">\n      <div id=\"mygrid\" style=\"height:700px;margin-top:40px;\"></div>\n    </div>\n    <div class=\"card-footer\">\n      <div class=\"row align-items-center\">\n          <div class=\"col-5\">\n              <div class=\"form-group row\">\n                  <label class=\"col-md-6 col-form-label\" for=\"distance\">Distance</label>\n                  <div class=\"col-md-6\">\n                    <input class=\"form-control\" id=\"distance\" disabled=\"\" name=\"distance\"   [(ngModel)]=\"distance\"  type=\"text\">                        \n                  </div>\n                </div>\n                <div class=\"form-group row\">\n                  <button type=\"button\" class=\"btn btn-block btn-secondary\"  (click)=\"clear()\" >Éffacer</button>\n                </div>\n                \n          </div>\n          <div class=\"col-5\">\n              <div class=\"form-group row\">\n                  <label class=\"col-md-5 col-form-label\" for=\"transformedLabel1\">Étiq.transformée Agent 1</label>\n                  <div class=\"col-md-7\">\n                    <input class=\"form-control\" id=\"transformedLabel1\" name=\"transformedLabel1\" disabled=\"\"  [(ngModel)]=\"transofrmedLabel1\"  type=\"text\">                        \n                  </div>\n                </div>\n                <div class=\"form-group row\">\n                    <label class=\"col-md-5 col-form-label\" for=\"transformedLabel2\">Étiq.transformée Agent 2</label>\n                    <div class=\"col-md-7\">\n                      <input class=\"form-control\"  id=\"transformedLabel2\" disabled=\"\" name=\"transformedLabel2\"  [(ngModel)]=\"transofrmedLabel2\" type=\"text\">                        \n                    </div>\n                </div>\n          </div>\n          <div class=\"col-2\">                  \n              <button type=\"button\" class=\"btn btn-block btn-primary\" [disabled]=\"!canStart()\" (click)=\"start()\" >{{startButtonLabel}}</button> \n          </div>                            \n      </div>  \n  </div>\n  </div>  \n  <div class=\"row\">\n      <div class=\"col-sm-12 col-lg-6\">\n        <tabset>\n          <tab>\n            <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:red\"> Agent 1</i></ng-template>\n            <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\n              <div class=\"form-group row\">\n                <label class=\"col-md-3 col-form-label\" for=\"select1\">Étiquette</label>\n                <div class=\"col-md-9\">\n                  <select id=\"agent1-label\" [(ngModel)]=\"agent1Label\" name=\"agent1-label\" (change)=\"setFirstAgentLabel()\" class=\"form-control\">                \n                    <option value=\"1\" selected>1</option>\n                    <option value=\"2\">2</option>\n                    <option value=\"3\">3</option>\n                    <option value=\"4\">4</option>\n                    <option value=\"5\">5</option>\n                    <option value=\"6\">6</option>\n                    <option value=\"7\">7</option>\n                    <option value=\"8\">8</option>\n                    <option value=\"9\">9</option>\n                    <option value=\"10\">10</option>                                            \n                  </select>\n                </div>\n              </div>\n              <div class=\"form-group row\">\n                <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\n                <div class=\"col-md-9\">\n                  <select id=\"agent1-shift\" name=\"agent1-shift\"     class=\"form-control\">                      \n                    <option value=\"0\" selected>0</option>\n                    <option value=\"1\" >1</option>\n                    <option value=\"2\">2</option>\n                    <option value=\"3\">3</option>\n                    <option value=\"4\">4</option>\n                    <option value=\"5\">5</option>\n                  </select>\n                </div>\n              </div>\n              <div class=\"form-group row\">\n                <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\n                <div class=\"col-md-9\">\n                  <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setFirstAgentPosition()\">Placer sur le noeud selectionné</button>\n                </div>\n              </div>\n            </form>\n          </tab>\n          <tab>\n            <ng-template tabHeading>Console</ng-template>\n            <textarea id=\"agent1-console\" name=\"agent1-console\" rows=\"9\"  class=\"form-control\" placeholder=\"Console Agent 1...\"></textarea>\n          </tab>\n        </tabset>\n      </div><!--/.col-->\n      <div class=\"col-sm-12 col-lg-6\">\n        <tabset>\n          <tab>\n            <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:blue\"> Agent 2</i></ng-template>\n            <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\n              <div class=\"form-group row\">\n                <label class=\"col-md-3 col-form-label\" for=\"agent2-label\">Étiquette</label>\n                <div class=\"col-md-9\">\n                  <select id=\"agent2-label\" [(ngModel)]=\"agent2Label\" (change)=\"setSecondAgentLabel()\" name=\"agent2-label\" class=\"form-control\">                           \n                    <option value=\"1\" >1</option>\n                    <option value=\"2\" selected>2</option>\n                    <option value=\"3\">3</option>\n                    <option value=\"4\">4</option>\n                    <option value=\"5\">5</option>\n                    <option value=\"6\">6</option>\n                    <option value=\"7\">7</option>\n                    <option value=\"8\">8</option>\n                    <option value=\"9\">9</option>\n                    <option value=\"10\">10</option>                                            \n                  </select>\n                </div>\n              </div>\n              <div class=\"form-group row\">\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\n                  <div class=\"col-md-9\">\n                    <select id=\"agent2-shift\" name=\"agent2-shift\" class=\"form-control\">                      \n                      <option value=\"0\" selected>0</option>\n                      <option value=\"1\" >1</option>\n                      <option value=\"2\">2</option>\n                      <option value=\"3\">3</option>\n                      <option value=\"4\">4</option>\n                      <option value=\"5\">5</option>\n                    </select>\n                  </div>\n                </div>                \n              <div class=\"form-group row\">\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\n                  <div class=\"col-md-9\">\n                    <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setSecondAgentPosition()\">Placer sur le noeud selectionné</button>\n                  </div>\n                </div>\n            </form>              \n          </tab>\n          <tab>\n            <ng-template tabHeading>Console</ng-template>\n            <textarea id=\"agent2-console\" name=\"agent2-console\"  rows=\"9\" class=\"form-control\" placeholder=\"Console Agent 2...\"></textarea>\n          </tab>\n        </tabset>\n      </div><!--/.col-->\n    </div><!--/.row-->    \n</div>"
+
+/***/ }),
+
+/***/ "./src/app/grid-graph/grid-graph.component.scss":
+/*!******************************************************!*\
+  !*** ./src/app/grid-graph/grid-graph.component.scss ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = ""
+
+/***/ }),
+
+/***/ "./src/app/grid-graph/grid-graph.component.ts":
+/*!****************************************************!*\
+  !*** ./src/app/grid-graph/grid-graph.component.ts ***!
+  \****************************************************/
+/*! exports provided: GridGraphComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GridGraphComponent", function() { return GridGraphComponent; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var vis__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! vis */ "./node_modules/vis/dist/vis.js");
+/* harmony import */ var vis__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(vis__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _manager_grid_rendez_vous_manager__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../manager/grid-rendez-vous.manager */ "./src/app/manager/grid-rendez-vous.manager.ts");
+var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (undefined && undefined.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+
+
+var GridGraphComponent = /** @class */ (function () {
+    function GridGraphComponent(_gridRendezVousManager) {
+        this._gridRendezVousManager = _gridRendezVousManager;
+        this.nodeIds = [];
+        this.agent1Label = '1';
+        this.agent2Label = '2';
+        this.agent1Console = '';
+        this.agent2Console = '';
+        this.distance = 0;
+        this.deltaMax = 0;
+        this.agent1Shit = 0;
+        this.agent2Shit = 0;
+        this.gridSize = 10;
+        this.transofrmedLabel1 = '';
+        this.transofrmedLabel2 = '';
+        this.startButtonLabel = 'Départ';
+        this.stopAfterEachRound = false;
+        this.allowRDVWithSameBit = false;
+        this.isRunning = false;
+        this.firstAgentPosition = '';
+        this.secondAgentPosition = '';
+        this.counter = 3;
+    }
+    GridGraphComponent.prototype.ngOnInit = function () {
+        this.gridInit();
+    };
+    GridGraphComponent.prototype.gridInit = function () {
+        this.nodes = new vis__WEBPACK_IMPORTED_MODULE_1__["DataSet"]();
+        // create an array with edges
+        this.edges = new vis__WEBPACK_IMPORTED_MODULE_1__["DataSet"]();
+        // create a network
+        var container = document.getElementById('mygrid');
+        var data = {
+            nodes: this.nodes,
+            edges: this.edges
+        };
+        var options = {
+            physics: {
+                enabled: false,
+                stabilization: {
+                    enabled: true,
+                    iterations: 1000,
+                    updateInterval: 100,
+                    onlyDynamicEdges: true,
+                    fit: true
+                }
+            },
+            interaction: {
+                hover: true,
+                dragNodes: false
+            },
+            nodes: {
+                color: '#669999'
+            }
+        };
+        this.network = new vis__WEBPACK_IMPORTED_MODULE_1__["Network"](container, data, options);
+        this._gridRendezVousManager.register(this.nodes, this.edges, this.network);
+        this._gridRendezVousManager.setFirstAgent(this.agent1Label);
+        this._gridRendezVousManager.setSecondAgent(this.agent2Label);
+        this.gridBuild();
+    };
+    GridGraphComponent.prototype.setSecondAgentLabel = function () {
+        this._gridRendezVousManager.setSecondAgentLabel(this.agent2Label);
+    };
+    GridGraphComponent.prototype.setFirstAgentLabel = function () {
+        this._gridRendezVousManager.setFirstAgentLabel(this.agent1Label);
+    };
+    GridGraphComponent.prototype.canSetPosition = function () {
+        if (this.network.getSelectedNodes().length > 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    GridGraphComponent.prototype.setFirstAgentPosition = function () {
+        var nodeId = this.network.getSelectedNodes()[0];
+        var node = this.nodes.get(nodeId);
+        if (node === null || node === undefined) {
+            return;
+        }
+        node.shape = 'icon';
+        node.icon = {
+            face: 'FontAwesome',
+            code: '\uf21d',
+            size: 30,
+            color: 'red'
+        };
+        if (this.firstAgentPosition !== '') {
+            var oldPositionNode = this.nodes.get(this.firstAgentPosition);
+            if (oldPositionNode !== null && oldPositionNode !== undefined) {
+                oldPositionNode.shape = 'ellipse';
+                oldPositionNode.image = '';
+                this.nodes.update(oldPositionNode);
+            }
+        }
+        this.firstAgentPosition = nodeId;
+        node.x = undefined;
+        node.y = undefined;
+        this.nodes.update(node);
+        this._gridRendezVousManager.setFirstAgent(this.agent1Label);
+        this._gridRendezVousManager.setFirstAgentPosition(nodeId);
+        this.distance = this._gridRendezVousManager.distance;
+    };
+    GridGraphComponent.prototype.setSecondAgentPosition = function () {
+        var nodeId = this.network.getSelectedNodes()[0];
+        var node = this.nodes.get(nodeId);
+        if (node === null || node === undefined) {
+            return;
+        }
+        node.shape = 'icon';
+        node.icon = {
+            face: 'FontAwesome',
+            code: '\uf21d',
+            size: 30,
+            color: 'blue'
+        };
+        if (this.secondAgentPosition !== '') {
+            var oldPositionNode = this.nodes.get(this.secondAgentPosition);
+            if (oldPositionNode !== null && oldPositionNode !== undefined) {
+                oldPositionNode.shape = 'ellipse';
+                oldPositionNode.image = '';
+                this.nodes.update(oldPositionNode);
+            }
+        }
+        this.secondAgentPosition = nodeId;
+        node.x = undefined;
+        node.y = undefined;
+        this.nodes.update(node);
+        this._gridRendezVousManager.setSecondAgent(this.agent2Label);
+        this._gridRendezVousManager.setSecondAgentPosition(nodeId);
+        this.distance = this._gridRendezVousManager.distance;
+    };
+    GridGraphComponent.prototype.setAgent2Shift = function () {
+        this.agent1Shit = 0;
+        this._gridRendezVousManager.FirstAgent.Shift = 0;
+        this._gridRendezVousManager.SecondAgent.Shift = this.agent2Shit;
+    };
+    GridGraphComponent.prototype.setAgent1Shift = function () {
+        this.agent2Shit = 0;
+        this._gridRendezVousManager.SecondAgent.Shift = 0;
+        this._gridRendezVousManager.FirstAgent.Shift = this.agent1Shit;
+    };
+    GridGraphComponent.prototype.canStepForword = function () {
+        return (this.isRunning && this.stopAfterEachRound);
+    };
+    GridGraphComponent.prototype.canStart = function () {
+        if (this.distance > 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    GridGraphComponent.prototype.getAgent1Console = function () {
+        this.agent1Console = this._gridRendezVousManager.agent1Console;
+    };
+    GridGraphComponent.prototype.getAgent2Console = function () {
+        this.agent2Console = this._gridRendezVousManager.agent2Console;
+    };
+    GridGraphComponent.prototype.executeCurrentBit = function () {
+        this._gridRendezVousManager.executeCurrentBit();
+    };
+    GridGraphComponent.prototype.start = function () {
+        var _this = this;
+        // init edges color
+        var ids = this.edges.getIds();
+        ids.forEach(function (id) {
+            var edge = _this.edges.get(id);
+            edge.color = {};
+            _this.edges.update(edge);
+        });
+        this._gridRendezVousManager.stopAfterEachRound = false;
+        this._gridRendezVousManager.allowRDVWithSameBit = false;
+        this.isRunning = true;
+        this._gridRendezVousManager.run(function () {
+            _this.updateTransformedLabels();
+        }, function () {
+            _this.updateCounter();
+        }, function () {
+            _this.rendezvousDone();
+        }, function () {
+            _this.getAgent1Console();
+        }, function () {
+            _this.getAgent2Console();
+        });
+    };
+    GridGraphComponent.prototype.updateCounter = function () {
+        this.startButtonLabel = '' + this.counter;
+        this.counter--;
+        if (this.counter === 0) {
+            this.counter = 3;
+            this.startButtonLabel = 'Rendez-vous en cours...';
+        }
+    };
+    GridGraphComponent.prototype.rendezvousDone = function () {
+        this.startButtonLabel = 'Rendezvous effectué';
+        this.stopAfterEachRound = false;
+        this.isRunning = false;
+    };
+    GridGraphComponent.prototype.stop = function () {
+        this._gridRendezVousManager.stop();
+        this.isRunning = false;
+    };
+    GridGraphComponent.prototype.updateTransformedLabels = function () {
+        if (this.distance === 0 && this.deltaMax === 0) {
+            this.transofrmedLabel1 = '';
+            this.transofrmedLabel2 = '';
+        }
+        else {
+            this.transofrmedLabel1 = this._gridRendezVousManager.transofrmedLabel1;
+            this.transofrmedLabel2 = this._gridRendezVousManager.transofrmedLabel2;
+        }
+    };
+    GridGraphComponent.prototype.clear = function () {
+        this._gridRendezVousManager.clear();
+        this._gridRendezVousManager.stop();
+        this.nodes.clear();
+        this.edges.clear();
+        this.distance = 0;
+        this.agent1Shit = 0;
+        this.agent2Shit = 0;
+        this.secondAgentPosition = '1';
+        this.firstAgentPosition = '1';
+        this.setAgent1Shift();
+        this.setAgent2Shift();
+        this.transofrmedLabel1 = '';
+        this.transofrmedLabel2 = '';
+        this.startButtonLabel = 'Départ';
+        this.stopAfterEachRound = false;
+        this.isRunning = false;
+        this.gridBuild();
+    };
+    GridGraphComponent.prototype.gridBuild = function () {
+        var size = +this.gridSize;
+        console.log(this.gridSize);
+        // generate nodes
+        var grid = new Array(size).fill(0).map(function () { return new Array(size).fill(0); });
+        for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+                grid[i][j] = {
+                    id: i + '-' + j,
+                    label: '',
+                    x: j * 80,
+                    y: i * 80
+                };
+            }
+        }
+        // set edge
+        for (var i = 0; i < grid.length; i++) {
+            var line = grid[i];
+            for (var j = 0; j < line.length; j++) {
+                var currentNode = grid[i][j];
+                this.nodes.add(currentNode);
+                this._gridRendezVousManager.addPoint(currentNode.id);
+                // north
+                if ((i - 1) >= 0) {
+                    var targetId = grid[i - 1][j].id;
+                    var edge1 = {
+                        color: '#669999',
+                        from: currentNode.id,
+                        to: targetId
+                    };
+                    var edge2 = {
+                        color: '#669999',
+                        from: targetId,
+                        to: currentNode.id
+                    };
+                    this.edges.add(edge1);
+                    this.edges.add(edge2);
+                    this._gridRendezVousManager.addPoint(targetId);
+                    this._gridRendezVousManager.setNorth(currentNode.id, targetId);
+                }
+                // west
+                if ((j - 1) >= 0) {
+                    var targetId = grid[i][j - 1].id;
+                    var edge1 = {
+                        color: '#669999',
+                        from: currentNode.id,
+                        to: targetId
+                    };
+                    var edge2 = {
+                        color: '#669999',
+                        from: targetId,
+                        to: currentNode.id
+                    };
+                    this.edges.add(edge1);
+                    this.edges.add(edge2);
+                    this._gridRendezVousManager.addPoint(targetId);
+                    this._gridRendezVousManager.setWest(currentNode.id, targetId);
+                }
+            }
+        }
+    };
+    GridGraphComponent = __decorate([
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
+            selector: 'app-grid-graph',
+            template: __webpack_require__(/*! ./grid-graph.component.html */ "./src/app/grid-graph/grid-graph.component.html"),
+            styles: [__webpack_require__(/*! ./grid-graph.component.scss */ "./src/app/grid-graph/grid-graph.component.scss")],
+            providers: [_manager_grid_rendez_vous_manager__WEBPACK_IMPORTED_MODULE_2__["GridRendezVousManager"]]
+        }),
+        __metadata("design:paramtypes", [_manager_grid_rendez_vous_manager__WEBPACK_IMPORTED_MODULE_2__["GridRendezVousManager"]])
+    ], GridGraphComponent);
+    return GridGraphComponent;
+}());
+
+
+
+/***/ }),
+
+/***/ "./src/app/manager/grid-rendez-vous.manager.ts":
+/*!*****************************************************!*\
+  !*** ./src/app/manager/grid-rendez-vous.manager.ts ***!
+  \*****************************************************/
+/*! exports provided: GridRendezVousManager */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GridRendezVousManager", function() { return GridRendezVousManager; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _data_grid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../data/grid */ "./src/app/data/grid.ts");
+/* harmony import */ var _data_agent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../data/agent */ "./src/app/data/agent.ts");
+/* harmony import */ var _algorithm_dijkstra__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../algorithm/dijkstra */ "./src/app/algorithm/dijkstra.ts");
+var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (undefined && undefined.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+
+
+
+var GridRendezVousManager = /** @class */ (function () {
+    function GridRendezVousManager() {
+        this.RendezVousNodeId = '';
+        this.distance = 0;
+        this.transofrmedLabel1 = '';
+        this.transofrmedLabel2 = '';
+        this.stopAfterEachRound = false;
+        this.allowRDVWithSameBit = false;
+        this.agent1Console = '';
+        this.agent2Console = '';
+        this.Network = new _data_grid__WEBPACK_IMPORTED_MODULE_1__["Grid"]();
+        this.agent1Label = '1';
+        this.agent2Label = '2';
+        this.agent1CurrentBit = 0;
+        this.agent2CurrentBit = 0;
+        this.currentAgent1Bit = '';
+        this.currentAgent2Bit = '';
+        this.agent1bitCounter = 0;
+        this.agent2bitCounter = 0;
+        this.syncBits = 0;
+        this.isRDV = false;
+        this.rdvNodeId = '';
+    }
+    GridRendezVousManager.prototype.register = function (nodes, edges, visNetwork) {
+        this.nodes = nodes;
+        this.edges = edges;
+        this.visNetwork = visNetwork;
+    };
+    GridRendezVousManager.prototype.clear = function () {
+        this.Network = new _data_grid__WEBPACK_IMPORTED_MODULE_1__["Grid"]();
+        this.FirstAgent = new _data_agent__WEBPACK_IMPORTED_MODULE_2__["Agent"](this.agent1Label);
+        this.SecondAgent = new _data_agent__WEBPACK_IMPORTED_MODULE_2__["Agent"](this.agent2Label);
+        this.agent1Console = '';
+        this.agent2Console = '';
+        this.isRDV = false;
+    };
+    GridRendezVousManager.prototype.addPoint = function (id) {
+        this.Network.addPoint(id);
+    };
+    GridRendezVousManager.prototype.setNorth = function (s, d) {
+        this.Network.setNorth(s, d);
+    };
+    GridRendezVousManager.prototype.setWest = function (s, d) {
+        this.Network.setWest(s, d);
+    };
+    GridRendezVousManager.prototype.setSecondAgentLabel = function (label) {
+        this.agent2Label = label;
+        this.SecondAgent.Label = label;
+    };
+    GridRendezVousManager.prototype.setFirstAgentLabel = function (label) {
+        this.agent1Label = label;
+        this.FirstAgent.Label = label;
+    };
+    GridRendezVousManager.prototype.setFirstAgent = function (label) {
+        this.agent1Label = label;
+        this.FirstAgent = new _data_agent__WEBPACK_IMPORTED_MODULE_2__["Agent"](label);
+    };
+    GridRendezVousManager.prototype.setSecondAgent = function (label) {
+        this.agent2Label = label;
+        this.SecondAgent = new _data_agent__WEBPACK_IMPORTED_MODULE_2__["Agent"](label);
+    };
+    GridRendezVousManager.prototype.setFirstAgentPosition = function (pointId) {
+        var point = this.Network.getPointById(pointId);
+        this.FirstAgent.CurrentPoint = point;
+        this.calculateDistance();
+    };
+    GridRendezVousManager.prototype.setSecondAgentPosition = function (pointId) {
+        var point = this.Network.getPointById(pointId);
+        this.SecondAgent.CurrentPoint = point;
+        this.calculateDistance();
+        if (this.RendezVousNodeId !== '') {
+            var n = this.nodes.get(this.RendezVousNodeId);
+            n.shape = 'ellipse';
+            n.image = '';
+            n.x = undefined;
+            n.y = undefined;
+            this.nodes.update(n);
+        }
+    };
+    GridRendezVousManager.prototype.calculateDistance = function () {
+        var _this = this;
+        if (this.SecondAgent.CurrentPoint != null && this.FirstAgent.CurrentPoint != null) {
+            var dijkstra_1 = new _algorithm_dijkstra__WEBPACK_IMPORTED_MODULE_3__["Dijkstra"]();
+            this.nodes.forEach(function (node) {
+                var connectedEdges = _this.edges.get({
+                    filter: function (edge) {
+                        return (edge.from === node.id || edge.to === node.id);
+                    }
+                });
+                var connectVertex = [];
+                connectedEdges.forEach(function (e) {
+                    if (e.to === node.id) {
+                        connectVertex.push({ nameOfVertex: e.from, weight: 1 });
+                    }
+                    else {
+                        connectVertex.push({ nameOfVertex: e.to, weight: 1 });
+                    }
+                });
+                dijkstra_1.addVertex(new _algorithm_dijkstra__WEBPACK_IMPORTED_MODULE_3__["Vertex"](node.id, connectVertex, 1));
+            });
+            var path = dijkstra_1.findShortestWay(this.FirstAgent.CurrentPoint.Id, this.SecondAgent.CurrentPoint.Id);
+            this.distance = Number(path[path.length - 1]);
+            // draw the path
+            var edgesToSelect_1 = [];
+            var edgesIds = [];
+            for (var index = 0; index <= path.length - 2; index++) {
+                if ((index - 1) > -1) {
+                    var from = path[index - 1];
+                    var to = path[index];
+                    edgesIds.push({ from: from, to: to });
+                }
+            }
+            edgesIds.forEach(function (element) {
+                var edges = _this.edges.get({
+                    filter: function (edge) {
+                        return ((edge.from === element.from && edge.to === element.to) ||
+                            (edge.to === element.from && edge.from === element.to));
+                    }
+                });
+                edgesToSelect_1.push(edges[0]);
+            });
+            // clear previous color
+            var ids = this.edges.getIds();
+            for (var index = 0; index < ids.length; index++) {
+                var id = ids[index];
+                var edge = this.edges.get(id);
+                edge.color = { color: '#669999', highlight: '#669999' };
+                this.edges.update(edge);
+            }
+            // set new color
+            for (var index = 0; index < edgesToSelect_1.length; index++) {
+                edgesToSelect_1[index].color = { color: 'blue', highlight: 'blue' };
+                edgesToSelect_1[index].dashes = true;
+                edgesToSelect_1[index].width = 5;
+            }
+            this.edges.update(edgesToSelect_1);
+        }
+    };
+    GridRendezVousManager.prototype.run = function (updateTransformedLabels, updateCounter, rendezvousDone, getAgent1Console, getAgent2Console) {
+        this.updateTransformedLabels = updateTransformedLabels;
+        this.updateCounter = updateCounter;
+        this.rendezvousDone = rendezvousDone;
+        this.getAgent1Console = getAgent1Console;
+        this.getAgent2Console = getAgent2Console;
+        this.isRDV = false;
+        this.initWorker();
+        this.start();
+    };
+    GridRendezVousManager.prototype.stop = function () {
+        if (this.agent2Worker !== undefined) {
+            this.agent2Worker.terminate();
+        }
+        if (this.agent1Worker !== undefined) {
+            this.agent1Worker.terminate();
+        }
+    };
+    GridRendezVousManager.prototype.moveAgent1ToNode = function (nodeId) {
+        var _this = this;
+        var oldNodePos = this.nodes.get(this.FirstAgent.CurrentPoint.Id);
+        oldNodePos.shape = 'ellipse';
+        oldNodePos.image = '';
+        oldNodePos.x = undefined;
+        oldNodePos.y = undefined;
+        var newNodePos = this.nodes.get(nodeId);
+        newNodePos.shape = 'icon';
+        newNodePos.icon = {
+            face: 'FontAwesome',
+            code: '\uf21d',
+            size: 30,
+            color: 'red'
+        };
+        newNodePos.x = undefined;
+        newNodePos.y = undefined;
+        this.FirstAgent.CurrentPoint = this.Network.getPointById(nodeId);
+        this.nodes.update([oldNodePos]);
+        // animate
+        var oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
+        var newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
+        var edges = oldNodeEdges.filter(function (value) { return -1 !== newNodeEdges.indexOf(value); });
+        var edgeId = edges[0];
+        var edge = this.edges.get(edgeId);
+        var backward = false;
+        if (edge.from !== oldNodePos.id) {
+            backward = true;
+        }
+        this.visNetwork.animateTraffic([
+            { edge: edgeId, trafficSize: 5, isBackward: backward }
+        ], 0.1, 'red', function () { }, function () { }, function () { }, function () {
+            _this.nodes.update([oldNodePos, newNodePos]);
+            if (_this.isRDV) {
+                _this.theRendezVousIsDone();
+            }
+        });
+    };
+    GridRendezVousManager.prototype.moveAgent2ToNode = function (nodeId) {
+        var _this = this;
+        var oldNodePos = this.nodes.get(this.SecondAgent.CurrentPoint.Id);
+        oldNodePos.shape = 'ellipse';
+        oldNodePos.image = '';
+        oldNodePos.x = undefined;
+        oldNodePos.y = undefined;
+        var newNodePos = this.nodes.get(nodeId);
+        newNodePos.shape = 'icon';
+        newNodePos.icon = {
+            face: 'FontAwesome',
+            code: '\uf21d',
+            size: 30,
+            color: 'blue'
+        };
+        newNodePos.x = undefined;
+        newNodePos.y = undefined;
+        this.SecondAgent.CurrentPoint = this.Network.getPointById(nodeId);
+        this.nodes.update([oldNodePos]);
+        // animate
+        var oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
+        var newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
+        var edges = oldNodeEdges.filter(function (value) { return -1 !== newNodeEdges.indexOf(value); });
+        var edgeId = edges[0];
+        var edge = this.edges.get(edgeId);
+        var backward = false;
+        if (edge.from !== oldNodePos.id) {
+            backward = true;
+        }
+        this.visNetwork.animateTraffic([
+            { edge: edgeId, trafficSize: 5, isBackward: backward }
+        ], 0.1, 'blue', function () { }, function () { }, function () { }, function () {
+            _this.nodes.update([oldNodePos, newNodePos]);
+            if (_this.isRDV) {
+                _this.theRendezVousIsDone();
+            }
+        });
+    };
+    GridRendezVousManager.prototype.setRendezVous = function (nodeId) {
+        var rendezVousNode = this.nodes.get(nodeId);
+        rendezVousNode.shape = 'circularImage';
+        rendezVousNode.image = 'assets/img/rdv.png';
+        rendezVousNode.size = 15;
+        rendezVousNode.x = undefined;
+        rendezVousNode.y = undefined;
+        this.nodes.update(rendezVousNode);
+    };
+    GridRendezVousManager.prototype.getAgent1TransofrmedLabel = function () {
+        this.FirstAgent.getTransformedLabel();
+    };
+    GridRendezVousManager.prototype.getAgent2TransofrmedLabel = function () {
+        this.FirstAgent.getTransformedLabel();
+    };
+    GridRendezVousManager.prototype.initWorker = function () {
+        this.initialAgent1Node = this.FirstAgent.CurrentPoint;
+        this.initialAgent2Node = this.SecondAgent.CurrentPoint;
+        var nodeVisitTime = 400;
+        this.agent1Worker = new Worker('assets/algo-grid-spiral.js');
+        this.agent2Worker = new Worker('assets/algo-grid-spiral.js');
+        var agent1params = {
+            action: 'init',
+            params: {
+                agent: this.FirstAgent,
+                distance: this.distance,
+                graph: this.Network,
+                nodeVisitTime: nodeVisitTime,
+                shift: this.FirstAgent.Shift
+            }
+        };
+        this.agent1Worker.postMessage(agent1params);
+        var agent2params = {
+            action: 'init',
+            params: {
+                agent: this.SecondAgent,
+                distance: this.distance,
+                graph: this.Network,
+                nodeVisitTime: nodeVisitTime,
+                shift: this.SecondAgent.Shift
+            }
+        };
+        this.agent2Worker.postMessage(agent2params);
+    };
+    GridRendezVousManager.prototype.getTransofrmedLabelWithPos = function (label, pos) {
+        var tmp = Object.assign([], label);
+        var shifted = [];
+        var transfLabel = '';
+        var emptyBitCounter = 0;
+        for (var index = 0; index < tmp.length; index++) {
+            var element = tmp[index];
+            if (element !== '*') {
+                shifted.push(element);
+            }
+            else {
+                emptyBitCounter++;
+            }
+        }
+        if (tmp[pos] === '*') {
+            transfLabel = shifted.join(' ');
+        }
+        else {
+            shifted[pos - emptyBitCounter] = '[' + shifted[pos - emptyBitCounter] + ']';
+            transfLabel = shifted.join(' ');
+        }
+        return transfLabel;
+    };
+    GridRendezVousManager.prototype.start = function () {
+        var _this = this;
+        var counter = 3;
+        this.agent1transformedLabel = this.FirstAgent.getTransformedLabelWithShift();
+        this.agent2transformedLabel = this.SecondAgent.getTransformedLabelWithShift();
+        this.agent1bitCounter = 0;
+        this.agent2bitCounter = 0;
+        this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
+        this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(this.agent2transformedLabel, this.agent2bitCounter);
+        this.updateTransformedLabels();
+        this.timer = setTimeout(function () {
+            if (_this.agent1bitCounter < _this.agent1transformedLabel.length) {
+                _this.currentAgent1Bit = _this.agent1transformedLabel[_this.agent1bitCounter];
+                _this.agent1Worker.postMessage({ action: 'exec' });
+                _this.agent1bitCounter++;
+            }
+            if (_this.agent2bitCounter < _this.agent1transformedLabel.length) {
+                _this.currentAgent2Bit = _this.agent2transformedLabel[_this.agent2bitCounter];
+                _this.agent2Worker.postMessage({ action: 'exec' });
+                _this.agent2bitCounter++;
+            }
+        }, 3000);
+        var counterTimer = setInterval(function () {
+            _this.updateCounter();
+            counter--;
+            if (counter === 0) {
+                counter = 3;
+                clearInterval(counterTimer);
+            }
+        }, 1000);
+        this.agent1Worker.onmessage = function (event) {
+            if (event.data.moveToNode !== undefined) {
+                var nodeId = event.data.moveToNode;
+                _this.moveAgent1ToNode(nodeId);
+                if (_this.allowRDVWithSameBit) {
+                    if (_this.SecondAgent.CurrentPoint.Id === nodeId) {
+                        _this.isRDV = true;
+                    }
+                }
+                else {
+                    if (_this.currentAgent2Bit === '0' && _this.SecondAgent.CurrentPoint.Id === nodeId &&
+                        _this.initialAgent2Node.Id === nodeId) {
+                        _this.isRDV = true;
+                    }
+                }
+                if (_this.isRDV) {
+                    _this.rdvNodeId = nodeId;
+                    _this.theRendezVousIsDone();
+                }
+            }
+            else if (event.data.bit !== undefined) {
+                _this.syncBits += 1;
+                if (_this.syncBits === 2) {
+                    console.log('agent 1 bit ' + _this.currentAgent1Bit + '.' + _this.agent1CurrentBit + ' execution done' + _this.syncBits);
+                    if (!_this.stopAfterEachRound) {
+                        _this.executeCurrentBit();
+                    }
+                }
+                _this.agent1CurrentBit = Number(event.data.bit);
+            }
+            else if (event.data.messageToConsole !== undefined) {
+                _this.agent1Console += event.data.messageToConsole;
+                _this.getAgent1Console();
+            }
+        };
+        this.agent2Worker.onmessage = function (event) {
+            if (event.data.moveToNode !== undefined) {
+                var nodeId = event.data.moveToNode;
+                _this.moveAgent2ToNode(nodeId);
+                if (_this.allowRDVWithSameBit) {
+                    if (_this.FirstAgent.CurrentPoint.Id === nodeId) {
+                        _this.isRDV = true;
+                    }
+                }
+                else {
+                    if (_this.currentAgent1Bit === '0' && _this.FirstAgent.CurrentPoint.Id === nodeId &&
+                        _this.initialAgent1Node.Id === nodeId) {
+                        _this.isRDV = true;
+                    }
+                }
+                if (_this.isRDV) {
+                    _this.rdvNodeId = nodeId;
+                    _this.theRendezVousIsDone();
+                }
+            }
+            else if (event.data.bit !== undefined) {
+                _this.syncBits += 1;
+                if (_this.syncBits === 2) {
+                    console.log('agent 2 bit ' + _this.currentAgent2Bit + '.' + _this.agent2CurrentBit + ' execution done ' + _this.syncBits);
+                    if (!_this.stopAfterEachRound) {
+                        _this.executeCurrentBit();
+                    }
+                }
+                _this.agent2CurrentBit = Number(event.data.bit);
+            }
+            else if (event.data.messageToConsole !== undefined) {
+                _this.agent2Console += event.data.messageToConsole;
+                _this.getAgent2Console();
+            }
+        };
+    }; // start
+    GridRendezVousManager.prototype.executeCurrentBit = function () {
+        this.syncBits = 0;
+        this.currentAgent1Bit = this.agent1transformedLabel[this.agent1bitCounter];
+        this.currentAgent2Bit = this.agent2transformedLabel[this.agent2bitCounter];
+        this.transofrmedLabel1 = this.getTransofrmedLabelWithPos(this.agent1transformedLabel, this.agent1bitCounter);
+        this.transofrmedLabel2 = this.getTransofrmedLabelWithPos(this.agent2transformedLabel, this.agent2bitCounter);
+        this.updateTransformedLabels();
+        if ((this.agent1bitCounter + 1) < this.agent1transformedLabel.length) {
+            this.agent1bitCounter++;
+            this.agent1Worker.postMessage({ action: 'exec' });
+        }
+        else {
+            this.agent1Worker.postMessage({ action: '*' });
+        }
+        if ((this.agent2bitCounter + 1) < this.agent2transformedLabel.length) {
+            this.agent2bitCounter++;
+            this.agent2Worker.postMessage({ action: 'exec' });
+        }
+        else {
+            this.agent2Worker.postMessage({ action: '*' });
+        }
+    };
+    GridRendezVousManager.prototype.theRendezVousIsDone = function () {
+        console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
+        this.agent1Worker.terminate();
+        this.agent2Worker.terminate();
+        this.setRendezVous(this.rdvNodeId);
+        this.rendezvousDone();
+    };
+    GridRendezVousManager = __decorate([
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])(),
+        __metadata("design:paramtypes", [])
+    ], GridRendezVousManager);
+    return GridRendezVousManager;
+}());
+
+
+
+/***/ }),
+
 /***/ "./src/app/manager/rendez-vous.manager.ts":
 /*!************************************************!*\
   !*** ./src/app/manager/rendez-vous.manager.ts ***!
@@ -60747,6 +61682,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _data_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../data/graph */ "./src/app/data/graph.ts");
 /* harmony import */ var _data_agent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../data/agent */ "./src/app/data/agent.ts");
 /* harmony import */ var _algorithm_dijkstra__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../algorithm/dijkstra */ "./src/app/algorithm/dijkstra.ts");
+/* harmony import */ var _data_movement__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../data/movement */ "./src/app/data/movement.ts");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -60756,6 +61692,7 @@ var __decorate = (undefined && undefined.__decorate) || function (decorators, ta
 var __metadata = (undefined && undefined.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+
 
 
 
@@ -60780,6 +61717,11 @@ var RendezVousManager = /** @class */ (function () {
         this.agent1bitCounter = 0;
         this.agent2bitCounter = 0;
         this.syncBits = 0;
+        this.traficAnimationSpeed = 5;
+        this.nodeVisitTime = 1200;
+        this.isRDV = false;
+        this.rdvNodeId = '';
+        this.movementCounter = 0;
     }
     RendezVousManager.prototype.register = function (nodes, edges, visNetwork) {
         this.nodes = nodes;
@@ -60792,6 +61734,7 @@ var RendezVousManager = /** @class */ (function () {
         this.SecondAgent = new _data_agent__WEBPACK_IMPORTED_MODULE_2__["Agent"](this.agent2Label);
         this.agent1Console = '';
         this.agent2Console = '';
+        this.isRDV = false;
     };
     RendezVousManager.prototype.addNode = function (id) {
         this.Network.addNode(id);
@@ -60863,37 +61806,44 @@ var RendezVousManager = /** @class */ (function () {
             var path = dijkstra_1.findShortestWay(this.FirstAgent.CurrentNode.Id, this.SecondAgent.CurrentNode.Id);
             this.distance = Number(path[path.length - 1]);
             // draw the path
-            var edgesToSelect_1 = [];
-            var edgesIds = [];
-            for (var index = 0; index <= path.length - 2; index++) {
-                if ((index - 1) > -1) {
-                    var from = path[index - 1];
-                    var to = path[index];
-                    edgesIds.push({ from: from, to: to });
-                }
-            }
-            edgesIds.forEach(function (element) {
-                var edges = _this.edges.get({
-                    filter: function (edge) {
-                        return ((edge.from === element.from && edge.to === element.to) ||
-                            (edge.to === element.from && edge.from === element.to));
-                    }
-                });
-                edgesToSelect_1.push(edges[0]);
-            });
-            // clear previous color
-            var ids = this.edges.getIds();
-            for (var index = 0; index < ids.length; index++) {
-                var id = ids[index];
-                var edge = this.edges.get(id);
-                edge.color = { color: '#669999', highlight: '#669999' };
-                this.edges.update(edge);
-            }
-            // set new color
-            for (var index = 0; index < edgesToSelect_1.length; index++) {
-                edgesToSelect_1[index].color = { color: '#99ff66', highlight: '#99ff66' };
-            }
-            this.edges.update(edgesToSelect_1);
+            /* const edgesToSelect = [];
+             const edgesIds = [];
+             for (let index = 0; index <= path.length - 2; index++) {
+               if ( (index - 1) > -1) {
+                 const from = path[index - 1];
+                 const to = path[index];
+                 edgesIds.push({from: from, to: to});
+               }
+             }
+             edgesIds.forEach((element) => {
+                 const edges = this.edges.get({
+                   filter: function (edge) {
+                     return ( (edge.from === element.from && edge.to === element.to) ||
+                     (edge.to === element.from && edge.from === element.to));
+                   }
+                 });
+                 edgesToSelect.push(edges[0]);
+             });
+             this.clearPreviousEdgeColor();
+             // set new color
+             for (let index = 0; index < edgesToSelect.length; index++) {
+               edgesToSelect[index].color = {color: 'blue', highlight: 'blue'};
+               edgesToSelect[index].dashes = true;
+               edgesToSelect[index].width = 5;
+             }
+             this.edges.update(edgesToSelect);*/
+        }
+    };
+    RendezVousManager.prototype.clearPreviousEdgeColor = function () {
+        // clear previous color
+        var ids = this.edges.getIds();
+        for (var index = 0; index < ids.length; index++) {
+            var id = ids[index];
+            var edge = this.edges.get(id);
+            edge.color = { color: '#669999', highlight: '#669999' };
+            edge.dashes = false;
+            edge.width = 1;
+            this.edges.update(edge);
         }
     };
     RendezVousManager.prototype.run = function (updateTransformedLabels, updateCounter, rendezvousDone, getAgent1Console, getAgent2Console) {
@@ -60902,6 +61852,8 @@ var RendezVousManager = /** @class */ (function () {
         this.rendezvousDone = rendezvousDone;
         this.getAgent1Console = getAgent1Console;
         this.getAgent2Console = getAgent2Console;
+        this.isRDV = false;
+        this.clearPreviousEdgeColor();
         this.initWorker();
         this.start();
     };
@@ -60914,58 +61866,55 @@ var RendezVousManager = /** @class */ (function () {
         }
     };
     RendezVousManager.prototype.moveAgent1ToNode = function (nodeId) {
-        var oldNodePos = this.nodes.get(this.FirstAgent.CurrentNode.Id);
-        oldNodePos.shape = 'ellipse';
-        oldNodePos.image = '';
-        oldNodePos.x = undefined;
-        oldNodePos.y = undefined;
-        var newNodePos = this.nodes.get(nodeId);
-        newNodePos.shape = 'icon';
-        newNodePos.icon = {
-            face: 'FontAwesome',
-            code: '\uf21d',
-            size: 30,
-            color: 'red'
-        };
-        newNodePos.x = undefined;
-        newNodePos.y = undefined;
-        this.FirstAgent.CurrentNode = this.Network.getNodeById(nodeId);
-        this.nodes.update([oldNodePos, newNodePos]);
-        // animate
-        var oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
-        var newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
-        var edges = oldNodeEdges.filter(function (value) { return -1 !== newNodeEdges.indexOf(value); });
-        this.visNetwork.animateTraffic([
-            { edge: edges[0], trafficSize: 5 }
-        ]);
+        this.agent1Move = new _data_movement__WEBPACK_IMPORTED_MODULE_4__["Movement"]();
+        this.agent1Move.AgentId = '1';
+        this.agent1Move.From = this.FirstAgent.CurrentNode.Id;
+        this.agent1Move.To = nodeId;
+        this.movementCounter += 1;
+        this.agent1Move.EdgeId = this.getEdgeBetweenNodes(this.agent1Move.From, nodeId);
+        this.updateAgentPosition();
     };
     RendezVousManager.prototype.moveAgent2ToNode = function (nodeId) {
-        var oldNodePos = this.nodes.get(this.SecondAgent.CurrentNode.Id);
-        oldNodePos.shape = 'ellipse';
-        oldNodePos.image = '';
-        oldNodePos.x = undefined;
-        oldNodePos.y = undefined;
-        var newNodePos = this.nodes.get(nodeId);
-        newNodePos.shape = 'icon';
-        newNodePos.icon = {
-            face: 'FontAwesome',
-            code: '\uf21d',
-            size: 30,
-            color: 'blue'
-        };
-        newNodePos.x = undefined;
-        newNodePos.y = undefined;
-        this.SecondAgent.CurrentNode = this.Network.getNodeById(nodeId);
-        this.nodes.update([oldNodePos, newNodePos]);
-        // animate
-        var oldNodeEdges = this.visNetwork.getConnectedEdges(oldNodePos.id);
-        var newNodeEdges = this.visNetwork.getConnectedEdges(nodeId);
-        var edges = oldNodeEdges.filter(function (value) { return -1 !== newNodeEdges.indexOf(value); });
-        this.visNetwork.animateTraffic([
-            { edge: edges[0], trafficSize: 5 }
-        ]);
+        this.agent2Move = new _data_movement__WEBPACK_IMPORTED_MODULE_4__["Movement"]();
+        this.agent2Move.AgentId = '2';
+        this.agent2Move.From = this.SecondAgent.CurrentNode.Id;
+        this.agent2Move.To = nodeId;
+        this.movementCounter += 1;
+        this.agent2Move.EdgeId = this.getEdgeBetweenNodes(this.agent2Move.From, nodeId);
+        this.updateAgentPosition();
     };
+    RendezVousManager.prototype.getEdgeBetweenNodes = function (source, dest) {
+        return this.edges.get().filter(function (edge) {
+            return (edge.from === source && edge.to === dest);
+        });
+    };
+    ;
     RendezVousManager.prototype.setRendezVous = function (nodeId) {
+        var agent1OldNode = this.nodes.get(this.agent1Move.From);
+        agent1OldNode.shape = 'ellipse';
+        agent1OldNode.image = '';
+        agent1OldNode.icon = undefined;
+        agent1OldNode.x = undefined;
+        agent1OldNode.y = undefined;
+        var agent2OldNode = this.nodes.get(this.agent2Move.From);
+        agent2OldNode.shape = 'ellipse';
+        agent2OldNode.image = '';
+        agent2OldNode.icon = undefined;
+        agent2OldNode.x = undefined;
+        agent2OldNode.y = undefined;
+        var agent1NewNode = this.nodes.get(this.agent1Move.To);
+        agent1NewNode.shape = 'ellipse';
+        agent1NewNode.image = '';
+        agent1NewNode.icon = undefined;
+        agent1NewNode.x = undefined;
+        agent1NewNode.y = undefined;
+        var agent2NewNode = this.nodes.get(this.agent2Move.To);
+        agent2NewNode.shape = 'ellipse';
+        agent2NewNode.image = '';
+        agent2NewNode.icon = undefined;
+        agent2NewNode.x = undefined;
+        agent2NewNode.y = undefined;
+        this.nodes.update([agent1OldNode, agent2OldNode, agent1NewNode, agent2NewNode]);
         var rendezVousNode = this.nodes.get(nodeId);
         rendezVousNode.shape = 'circularImage';
         rendezVousNode.image = 'assets/img/rdv.png';
@@ -60973,6 +61922,81 @@ var RendezVousManager = /** @class */ (function () {
         rendezVousNode.x = undefined;
         rendezVousNode.y = undefined;
         this.nodes.update(rendezVousNode);
+    };
+    RendezVousManager.prototype.updateAgentPosition = function () {
+        var _this = this;
+        if (this.movementCounter === 2) {
+            var sameAgent1Position = this.agent1Move.IsSamePosition();
+            var sameAgent2Position = this.agent2Move.IsSamePosition();
+            var agent1OldNode = this.nodes.get(this.agent1Move.From);
+            agent1OldNode.shape = 'ellipse';
+            agent1OldNode.image = '';
+            agent1OldNode.icon = undefined;
+            agent1OldNode.x = undefined;
+            agent1OldNode.y = undefined;
+            var agent1NewNode_1 = this.nodes.get(this.agent1Move.To);
+            agent1NewNode_1.shape = 'icon';
+            agent1NewNode_1.icon = {
+                face: 'FontAwesome',
+                code: '\uf21d',
+                size: 30,
+                color: 'red'
+            };
+            agent1NewNode_1.x = undefined;
+            agent1NewNode_1.y = undefined;
+            this.FirstAgent.CurrentNode = this.Network.getNodeById(this.agent1Move.To);
+            var agent2OldNode = this.nodes.get(this.agent2Move.From);
+            agent2OldNode.shape = 'ellipse';
+            agent2OldNode.image = '';
+            agent2OldNode.icon = undefined;
+            agent2OldNode.x = undefined;
+            agent2OldNode.y = undefined;
+            var agent2NewNode_1 = this.nodes.get(this.agent2Move.To);
+            agent2NewNode_1.shape = 'icon';
+            agent2NewNode_1.icon = {
+                face: 'FontAwesome',
+                code: '\uf21d',
+                size: 30,
+                color: 'blue'
+            };
+            agent2NewNode_1.x = undefined;
+            agent2NewNode_1.y = undefined;
+            this.SecondAgent.CurrentNode = this.Network.getNodeById(this.agent2Move.To);
+            if (!sameAgent1Position) {
+                this.nodes.update(agent1OldNode);
+                // animate agent 1;
+                this.visNetwork.animateTraffic([{ edge: this.agent1Move.EdgeId, trafficSize: 5, isBackward: false }], this.traficAnimationSpeed * 3, 'red', function () { }, function () { }, function () { }, function () {
+                    if (agent1NewNode_1.id === agent2NewNode_1.id) {
+                        _this.setRendezVous(agent1NewNode_1.id);
+                    }
+                    else {
+                        _this.nodes.update(agent1NewNode_1);
+                    }
+                    if (_this.isRDV) {
+                        _this.theRendezVousIsDone();
+                    }
+                });
+            }
+            if (!sameAgent2Position) {
+                this.nodes.update(agent2OldNode);
+                // animate agent 2;
+                this.visNetwork.animateTraffic([{ edge: this.agent2Move.EdgeId, trafficSize: 5, isBackward: false }], this.traficAnimationSpeed * 3, 'blue', function () { }, function () { }, function () { }, function () {
+                    if (agent1NewNode_1.id === agent2NewNode_1.id) {
+                        _this.setRendezVous(agent1NewNode_1.id);
+                    }
+                    else {
+                        _this.nodes.update(agent2NewNode_1);
+                    }
+                    if (_this.isRDV) {
+                        _this.theRendezVousIsDone();
+                    }
+                });
+            }
+            if (this.isRDV) {
+                this.theRendezVousIsDone();
+            }
+            this.movementCounter = 0;
+        }
     };
     RendezVousManager.prototype.getAgent1TransofrmedLabel = function () {
         this.FirstAgent.getTransformedLabel();
@@ -60992,9 +62016,8 @@ var RendezVousManager = /** @class */ (function () {
         this.initialAgent2Node = this.SecondAgent.CurrentNode;
         var delta = this.Network.getMaxNeighbours();
         console.log('Delta is:' + delta);
-        var nodeVisitTime = 800;
         var visitedNodeCount = this.getBouleTime(); // 2 * this.distance * delta * (Math.pow( delta - 1, this.distance - 1));
-        var roundTime = (visitedNodeCount * nodeVisitTime * 2);
+        var roundTime = (visitedNodeCount * this.nodeVisitTime * 2);
         this.agent1Worker = new Worker('assets/algo-graph-delta.js');
         this.agent2Worker = new Worker('assets/algo-graph-delta.js');
         var agent1params = {
@@ -61004,7 +62027,7 @@ var RendezVousManager = /** @class */ (function () {
                 distance: this.distance,
                 maxNeighbours: delta,
                 graph: this.Network,
-                nodeVisitTime: nodeVisitTime,
+                nodeVisitTime: this.nodeVisitTime,
                 shift: this.FirstAgent.Shift
             }
         };
@@ -61016,7 +62039,7 @@ var RendezVousManager = /** @class */ (function () {
                 distance: this.distance,
                 maxNeighbours: delta,
                 graph: this.Network,
-                nodeVisitTime: nodeVisitTime,
+                nodeVisitTime: this.nodeVisitTime,
                 shift: this.SecondAgent.Shift
             }
         };
@@ -61078,25 +62101,21 @@ var RendezVousManager = /** @class */ (function () {
         this.agent1Worker.onmessage = function (event) {
             if (event.data.moveToNode !== undefined) {
                 var nodeId = event.data.moveToNode;
-                var isRDV = false;
                 _this.moveAgent1ToNode(nodeId);
                 if (_this.allowRDVWithSameBit) {
                     if (_this.SecondAgent.CurrentNode.Id === nodeId) {
-                        isRDV = true;
+                        _this.isRDV = true;
                     }
                 }
                 else {
                     if (_this.currentAgent2Bit === '0' && _this.SecondAgent.CurrentNode.Id === nodeId &&
                         _this.initialAgent2Node.Id === nodeId) {
-                        isRDV = true;
+                        _this.isRDV = true;
                     }
                 }
-                if (isRDV) {
-                    console.log('OUTSIDE: agent1 find agent 2:  RDV DONE:');
-                    _this.agent1Worker.terminate();
-                    _this.agent2Worker.terminate();
-                    _this.setRendezVous(nodeId);
-                    _this.rendezvousDone();
+                if (_this.isRDV) {
+                    _this.rdvNodeId = nodeId;
+                    _this.theRendezVousIsDone();
                 }
             }
             else if (event.data.bit !== undefined) {
@@ -61117,25 +62136,21 @@ var RendezVousManager = /** @class */ (function () {
         this.agent2Worker.onmessage = function (event) {
             if (event.data.moveToNode !== undefined) {
                 var nodeId = event.data.moveToNode;
-                var isRDV = false;
                 _this.moveAgent2ToNode(nodeId);
                 if (_this.allowRDVWithSameBit) {
                     if (_this.FirstAgent.CurrentNode.Id === nodeId) {
-                        isRDV = true;
+                        _this.isRDV = true;
                     }
                 }
                 else {
                     if (_this.currentAgent1Bit === '0' && _this.FirstAgent.CurrentNode.Id === nodeId &&
                         _this.initialAgent1Node.Id === nodeId) {
-                        isRDV = true;
+                        _this.isRDV = true;
                     }
                 }
-                if (isRDV) {
-                    console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
-                    _this.agent1Worker.terminate();
-                    _this.agent2Worker.terminate();
-                    _this.setRendezVous(nodeId);
-                    _this.rendezvousDone();
+                if (_this.isRDV) {
+                    _this.rdvNodeId = nodeId;
+                    _this.theRendezVousIsDone();
                 }
             }
             else if (event.data.bit !== undefined) {
@@ -61176,6 +62191,13 @@ var RendezVousManager = /** @class */ (function () {
             this.agent2Worker.postMessage({ action: '*' });
         }
     };
+    RendezVousManager.prototype.theRendezVousIsDone = function () {
+        console.log('OUTSIDE: agent2 find agent 1: RDV DONE:');
+        this.agent1Worker.terminate();
+        this.agent2Worker.terminate();
+        this.setRendezVous(this.rdvNodeId);
+        this.rendezvousDone();
+    };
     RendezVousManager = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])(),
         __metadata("design:paramtypes", [])
@@ -61194,7 +62216,7 @@ var RendezVousManager = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"animated fadeIn\"> \r\n    <div class=\"card\">\r\n      <div class=\"card-body\">\r\n        <div id=\"mynetwork\" style=\"height:700px;margin-top:40px;\"></div>\r\n      </div>\r\n      <div class=\"card-footer\">\r\n          <div class=\"row align-items-center\">\r\n              <div class=\"col-2\">                \r\n                <button type=\"button\" class=\"btn btn-block btn-secondary\" (click)=\"generateGraph()\">Génerer</button>\r\n                <button type=\"button\" class=\"btn btn-block btn-secondary\"  (click)=\"clear()\" >Éffacer</button>\r\n              </div>\r\n              <div class=\"col-4\">\r\n                  <div class=\"form-group row\">\r\n                      <label class=\"col-md-6 col-form-label\" for=\"distance\">Distance</label>\r\n                      <div class=\"col-md-6\">\r\n                        <input class=\"form-control\" id=\"distance\" disabled=\"\" name=\"distance\"   [(ngModel)]=\"distance\"  type=\"text\">                        \r\n                      </div>\r\n                    </div>\r\n                    <div class=\"form-group row\">\r\n                        <label class=\"col-md-6 col-form-label\" for=\"delta-maximal\">Delta.Max</label>\r\n                        <div class=\"col-md-6\">\r\n                          <input class=\"form-control\"  disabled=\"\" id=\"delta-maximal\" name=\"delta-maximal\" [(ngModel)]=\"deltaMax\" type=\"text\">                        \r\n                        </div>\r\n                    </div>\r\n              </div>\r\n              <div class=\"col-4\">\r\n                  <div class=\"form-group row\">\r\n                      <label class=\"col-md-5 col-form-label\" for=\"transformedLabel1\">Étiq.transformée Agent 1</label>\r\n                      <div class=\"col-md-7\">\r\n                        <input class=\"form-control\" id=\"transformedLabel1\" name=\"transformedLabel1\" disabled=\"\"  [(ngModel)]=\"transofrmedLabel1\"  type=\"text\">                        \r\n                      </div>\r\n                    </div>\r\n                    <div class=\"form-group row\">\r\n                        <label class=\"col-md-5 col-form-label\" for=\"transformedLabel2\">Étiq.transformée Agent 2</label>\r\n                        <div class=\"col-md-7\">\r\n                          <input class=\"form-control\"  id=\"transformedLabel2\" disabled=\"\" name=\"transformedLabel2\"  [(ngModel)]=\"transofrmedLabel2\" type=\"text\">                        \r\n                        </div>\r\n                    </div>\r\n              </div>\r\n              <div class=\"col-2\">                  \r\n                  <button type=\"button\" class=\"btn btn-block btn-primary\" [disabled]=\"!canStart()\" (click)=\"start()\" >{{startButtonLabel}}</button>                  \r\n                  <div class=\"form-check form-check-inline mr-1\">\r\n                      <input class=\"form-check-input\" type=\"checkbox\" [(ngModel)]=\"stopAfterEachRound\"  >\r\n                      <label class=\"form-check-label\" for=\"inline-checkbox1\">S'arrêter après chaque ronde</label>\r\n                  </div>\r\n                  <div class=\"form-check form-check-inline mr-1\">\r\n                    <button class=\"btn btn-sm\" [disabled]=\"!canStepForword()\" (click)=\"executeCurrentBit()\" ><i class=\"fa fa-step-forward\"></i></button>\r\n                </div>\r\n                <div class=\"form-check form-check-inline mr-1\">\r\n                  <input class=\"form-check-input\"  type=\"checkbox\" [(ngModel)]=\"allowRDVWithSameBit\"  >\r\n                  <label class=\"form-check-label\" for=\"inline-checkbox1\">Permettre le RDV durant le bit 1</label>\r\n              </div>\r\n              </div>                            \r\n          </div>  \r\n      </div>\r\n    </div>\r\n    <div class=\"row\">\r\n        <div class=\"col-sm-12 col-lg-6\">\r\n          <tabset>\r\n            <tab>\r\n              <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:red\"> Agent 1</i></ng-template>\r\n              <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Étiquette</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent1-label\" [(ngModel)]=\"agent1Label\" name=\"agent1-label\" (change)=\"setFirstAgentLabel()\" class=\"form-control\">                      \r\n                      <option value=\"1\" selected>1</option>\r\n                      <option value=\"2\">2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                      <option value=\"6\">6</option>\r\n                      <option value=\"7\">7</option>\r\n                      <option value=\"8\">8</option>\r\n                      <option value=\"9\">9</option>\r\n                      <option value=\"10\">10</option>                                            \r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent1-shift\" name=\"agent1-shift\"   [(ngModel)]=\"agent1Shit\" (change)=\"setAgent1Shift()\" class=\"form-control\">                      \r\n                      <option value=\"0\" selected>0</option>\r\n                      <option value=\"1\" >1</option>\r\n                      <option value=\"2\">2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\r\n                  <div class=\"col-md-9\">\r\n                    <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setFirstAgentPosition()\">Placer sur le noeud selectionné</button>\r\n                  </div>\r\n                </div>\r\n              </form>\r\n            </tab>\r\n            <tab>\r\n              <ng-template tabHeading>Console</ng-template>\r\n              <textarea id=\"agent1-console\" name=\"agent1-console\" rows=\"9\"  [(ngModel)]='agent1Console' class=\"form-control\" placeholder=\"Console Agent 1...\"></textarea>\r\n            </tab>\r\n          </tabset>\r\n        </div><!--/.col-->\r\n        <div class=\"col-sm-12 col-lg-6\">\r\n          <tabset>\r\n            <tab>\r\n              <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:blue\"> Agent 2</i></ng-template>\r\n              <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"agent2-label\">Étiquette</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent2-label\" [(ngModel)]=\"agent2Label\" (change)=\"setSecondAgentLabel()\" name=\"agent2-label\" class=\"form-control\">                      \r\n                      <option value=\"1\" >1</option>\r\n                      <option value=\"2\" selected>2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                      <option value=\"6\">6</option>\r\n                      <option value=\"7\">7</option>\r\n                      <option value=\"8\">8</option>\r\n                      <option value=\"9\">9</option>\r\n                      <option value=\"10\">10</option>                                            \r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                    <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\r\n                    <div class=\"col-md-9\">\r\n                      <select id=\"agent2-shift\" name=\"agent2-shift\"  [(ngModel)]=\"agent2Shit\" (change)=\"setAgent2Shift()\" class=\"form-control\">                      \r\n                        <option value=\"0\" selected>0</option>\r\n                        <option value=\"1\" >1</option>\r\n                        <option value=\"2\">2</option>\r\n                        <option value=\"3\">3</option>\r\n                        <option value=\"4\">4</option>\r\n                        <option value=\"5\">5</option>\r\n                      </select>\r\n                    </div>\r\n                  </div>                \r\n                <div class=\"form-group row\">\r\n                    <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\r\n                    <div class=\"col-md-9\">\r\n                      <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setSecondAgentPosition()\">Placer sur le noeud selectionné</button>\r\n                    </div>\r\n                  </div>\r\n              </form>              \r\n            </tab>\r\n            <tab>\r\n              <ng-template tabHeading>Console</ng-template>\r\n              <textarea id=\"agent2-console\" name=\"agent2-console\" [(ngModel)]='agent2Console' rows=\"9\" class=\"form-control\" placeholder=\"Console Agent 2...\"></textarea>\r\n            </tab>\r\n          </tabset>\r\n        </div><!--/.col-->\r\n      </div><!--/.row-->    \r\n  </div>"
+module.exports = "<div class=\"animated fadeIn\"> \r\n    <div class=\"card\">\r\n      <div class=\"card-body\">\r\n        <div id=\"mynetwork\" style=\"height:700px;margin-top:40px;\"></div>\r\n      </div>\r\n      <div class=\"card-footer\">\r\n          <div class=\"row align-items-center\">\r\n              <div class=\"col-2\">                \r\n                <button type=\"button\" class=\"btn btn-block btn-secondary\" (click)=\"generateGraph()\">Génerer</button>\r\n                <button type=\"button\" class=\"btn btn-block btn-secondary\"  (click)=\"clear()\" >Éffacer</button>                \r\n              </div>\r\n              <div class=\"col-4\">\r\n                  <div class=\"form-group row\">\r\n                      <label class=\"col-md-6 col-form-label\" for=\"distance\">Distance</label>\r\n                      <div class=\"col-md-6\">\r\n                        <input class=\"form-control\" id=\"distance\" disabled=\"\" name=\"distance\"   [(ngModel)]=\"distance\"  type=\"text\">                        \r\n                      </div>\r\n                    </div>\r\n                    <div class=\"form-group row\">\r\n                        <label class=\"col-md-6 col-form-label\" for=\"delta-maximal\">Delta.Max</label>\r\n                        <div class=\"col-md-6\">\r\n                          <input class=\"form-control\"  disabled=\"\" id=\"delta-maximal\" name=\"delta-maximal\" [(ngModel)]=\"deltaMax\" type=\"text\">                        \r\n                        </div>\r\n                    </div>\r\n              </div>\r\n              <div class=\"col-4\">\r\n                  <div class=\"form-group row\">\r\n                      <label class=\"col-md-5 col-form-label\" for=\"transformedLabel1\">Étiq.transformée Agent 1</label>\r\n                      <div class=\"col-md-7\">\r\n                        <input class=\"form-control\" id=\"transformedLabel1\" name=\"transformedLabel1\" disabled=\"\"  [(ngModel)]=\"transofrmedLabel1\"  type=\"text\">                        \r\n                      </div>\r\n                    </div>\r\n                    <div class=\"form-group row\">\r\n                        <label class=\"col-md-5 col-form-label\" for=\"transformedLabel2\">Étiq.transformée Agent 2</label>\r\n                        <div class=\"col-md-7\">\r\n                          <input class=\"form-control\"  id=\"transformedLabel2\" disabled=\"\" name=\"transformedLabel2\"  [(ngModel)]=\"transofrmedLabel2\" type=\"text\">                        \r\n                        </div>\r\n                    </div>\r\n              </div>\r\n              <div class=\"col-2\">                  \r\n                  <button type=\"button\" class=\"btn btn-block btn-primary\" [disabled]=\"!canStart()\" (click)=\"start()\" >{{startButtonLabel}}</button>                  \r\n                  <div class=\"form-check form-check-inline mr-1\">\r\n                      <input class=\"form-check-input\" type=\"checkbox\" [(ngModel)]=\"stopAfterEachRound\"  >\r\n                      <label class=\"form-check-label\" for=\"inline-checkbox1\">S'arrêter après chaque ronde</label>\r\n                  </div>\r\n                  <div class=\"form-check form-check-inline mr-1\">\r\n                    <button class=\"btn btn-sm\" [disabled]=\"!canStepForword()\" (click)=\"executeCurrentBit()\" ><i class=\"fa fa-step-forward\"></i></button>\r\n                </div>\r\n                <div class=\"form-check form-check-inline mr-1\">\r\n                  <input class=\"form-check-input\"  type=\"checkbox\" [(ngModel)]=\"allowRDVWithSameBit\"  >\r\n                  <label class=\"form-check-label\" for=\"inline-checkbox1\">Permettre le RDV durant le bit 1</label>\r\n              </div>\r\n              </div>                            \r\n          </div>  \r\n      </div>\r\n    </div>\r\n    <div class=\"row\">\r\n        <div class=\"col-sm-12 col-lg-6\">\r\n          <tabset>\r\n            <tab>\r\n              <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:red\"> Agent 1</i></ng-template>\r\n              <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Étiquette</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent1-label\" [(ngModel)]=\"agent1Label\" name=\"agent1-label\" (change)=\"setFirstAgentLabel()\" class=\"form-control\">                      \r\n                      <option value=\"1\" selected>1</option>\r\n                      <option value=\"2\">2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                      <option value=\"6\">6</option>\r\n                      <option value=\"7\">7</option>\r\n                      <option value=\"8\">8</option>\r\n                      <option value=\"9\">9</option>\r\n                      <option value=\"10\">10</option>                                            \r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent1-shift\" name=\"agent1-shift\"   [(ngModel)]=\"agent1Shit\" (change)=\"setAgent1Shift()\" class=\"form-control\">                      \r\n                      <option value=\"0\" selected>0</option>\r\n                      <option value=\"1\" >1</option>\r\n                      <option value=\"2\">2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\r\n                  <div class=\"col-md-9\">\r\n                    <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setFirstAgentPosition()\">Placer sur le noeud selectionné</button>\r\n                  </div>\r\n                </div>\r\n              </form>\r\n            </tab>\r\n            <tab>\r\n              <ng-template tabHeading>Console</ng-template>\r\n              <textarea id=\"agent1-console\" name=\"agent1-console\" rows=\"9\"  [(ngModel)]='agent1Console' class=\"form-control\" placeholder=\"Console Agent 1...\"></textarea>\r\n            </tab>\r\n          </tabset>\r\n        </div><!--/.col-->\r\n        <div class=\"col-sm-12 col-lg-6\">\r\n          <tabset>\r\n            <tab>\r\n              <ng-template tabHeading><i class=\"fa fa-street-view \" style=\"color:blue\"> Agent 2</i></ng-template>\r\n              <form action=\"\" method=\"post\" enctype=\"multipart/form-data\" class=\"form-horizontal\">\r\n                <div class=\"form-group row\">\r\n                  <label class=\"col-md-3 col-form-label\" for=\"agent2-label\">Étiquette</label>\r\n                  <div class=\"col-md-9\">\r\n                    <select id=\"agent2-label\" [(ngModel)]=\"agent2Label\" (change)=\"setSecondAgentLabel()\" name=\"agent2-label\" class=\"form-control\">                      \r\n                      <option value=\"1\" >1</option>\r\n                      <option value=\"2\" selected>2</option>\r\n                      <option value=\"3\">3</option>\r\n                      <option value=\"4\">4</option>\r\n                      <option value=\"5\">5</option>\r\n                      <option value=\"6\">6</option>\r\n                      <option value=\"7\">7</option>\r\n                      <option value=\"8\">8</option>\r\n                      <option value=\"9\">9</option>\r\n                      <option value=\"10\">10</option>                                            \r\n                    </select>\r\n                  </div>\r\n                </div>\r\n                <div class=\"form-group row\">\r\n                    <label class=\"col-md-3 col-form-label\" for=\"select1\">Nb. ronde de décalage</label>\r\n                    <div class=\"col-md-9\">\r\n                      <select id=\"agent2-shift\" name=\"agent2-shift\"  [(ngModel)]=\"agent2Shit\" (change)=\"setAgent2Shift()\" class=\"form-control\">                      \r\n                        <option value=\"0\" selected>0</option>\r\n                        <option value=\"1\" >1</option>\r\n                        <option value=\"2\">2</option>\r\n                        <option value=\"3\">3</option>\r\n                        <option value=\"4\">4</option>\r\n                        <option value=\"5\">5</option>\r\n                      </select>\r\n                    </div>\r\n                  </div>                \r\n                <div class=\"form-group row\">\r\n                    <label class=\"col-md-3 col-form-label\" for=\"select1\">Position</label>\r\n                    <div class=\"col-md-9\">\r\n                      <button class=\"btn btn-primary\" [disabled]=\"!canSetPosition()\" (click)=\"setSecondAgentPosition()\">Placer sur le noeud selectionné</button>\r\n                    </div>\r\n                  </div>\r\n              </form>              \r\n            </tab>\r\n            <tab>\r\n              <ng-template tabHeading>Console</ng-template>\r\n              <textarea id=\"agent2-console\" name=\"agent2-console\" [(ngModel)]='agent2Console' rows=\"9\" class=\"form-control\" placeholder=\"Console Agent 2...\"></textarea>\r\n            </tab>\r\n          </tabset>\r\n        </div><!--/.col-->\r\n      </div><!--/.row-->    \r\n  </div>"
 
 /***/ }),
 
@@ -61262,7 +62284,7 @@ var NetworkGraphComponent = /** @class */ (function () {
         };
         var options = {
             physics: {
-                enabled: true,
+                enabled: false,
                 stabilization: {
                     enabled: true,
                     iterations: 1000,
@@ -61272,7 +62294,7 @@ var NetworkGraphComponent = /** @class */ (function () {
                 }
             },
             interaction: {
-                hover: true
+                hover: true,
             },
             manipulation: {
                 enabled: true,
@@ -61300,6 +62322,10 @@ var NetworkGraphComponent = /** @class */ (function () {
                     data.color = '#669999';
                     _this._rendezVousManager.addEdge(data.from, data.to);
                     callback(data);
+                    _this.edges.add({
+                        from: data.to,
+                        to: data.from
+                    });
                     _this.deltaMax = _this._rendezVousManager.getDeltaMax();
                 },
                 // tslint:disable-next-line:no-shadowed-variable
@@ -61588,12 +62614,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
 /* harmony import */ var _network_graph_network_graph_component__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../network-graph/network-graph.component */ "./src/app/network-graph/network-graph.component.ts");
+/* harmony import */ var _grid_graph_grid_graph_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../grid-graph/grid-graph.component */ "./src/app/grid-graph/grid-graph.component.ts");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+
 
 
 
@@ -61609,6 +62637,13 @@ var routes = [
                 component: _network_graph_network_graph_component__WEBPACK_IMPORTED_MODULE_2__["NetworkGraphComponent"],
                 data: {
                     title: 'Delta Max'
+                }
+            },
+            {
+                path: 'grid',
+                component: _grid_graph_grid_graph_component__WEBPACK_IMPORTED_MODULE_3__["GridGraphComponent"],
+                data: {
+                    title: 'Grid'
                 }
             }
         ]
@@ -61646,6 +62681,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var ngx_bootstrap_tabs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ngx-bootstrap/tabs */ "./node_modules/ngx-bootstrap/tabs/index.js");
 /* harmony import */ var _algo_routing_module__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./algo-routing.module */ "./src/app/views/algo/algo-routing.module.ts");
 /* harmony import */ var _network_graph_network_graph_component__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../network-graph/network-graph.component */ "./src/app/network-graph/network-graph.component.ts");
+/* harmony import */ var _grid_graph_grid_graph_component__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../grid-graph/grid-graph.component */ "./src/app/grid-graph/grid-graph.component.ts");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -61660,6 +62696,7 @@ var __decorate = (undefined && undefined.__decorate) || function (decorators, ta
 // Theme Routing
 
 
+
 var AlgoModule = /** @class */ (function () {
     function AlgoModule() {
     }
@@ -61672,7 +62709,8 @@ var AlgoModule = /** @class */ (function () {
                 _angular_forms__WEBPACK_IMPORTED_MODULE_2__["FormsModule"]
             ],
             declarations: [
-                _network_graph_network_graph_component__WEBPACK_IMPORTED_MODULE_5__["NetworkGraphComponent"]
+                _network_graph_network_graph_component__WEBPACK_IMPORTED_MODULE_5__["NetworkGraphComponent"],
+                _grid_graph_grid_graph_component__WEBPACK_IMPORTED_MODULE_6__["GridGraphComponent"]
             ]
         })
     ], AlgoModule);
